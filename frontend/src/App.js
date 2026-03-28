@@ -67,6 +67,15 @@ function App() {
 
         clearInterval(messageInterval);
 
+        if (result.error) {
+          setResults(null);
+          setSurgeonSummary(null);
+          setPatientSummary(null);
+          setError(result.error);
+          setLoading(false);
+          return;
+        }
+
         if (!result.procedures || result.procedures.length === 0) {
           // Claude returned empty — fall back to local scoring engine
           const fallbackMatches = scoreAndRankProcedures(activeProfile, PROCEDURES_CATALOG);

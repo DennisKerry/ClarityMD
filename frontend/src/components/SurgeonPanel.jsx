@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function SurgeonPanel({ procedures, summary }) {
+  const [hoveredIdx, setHoveredIdx] = useState(null);
+
   const handleCopyBrief = () => {
     if (summary) {
       navigator.clipboard.writeText(summary);
@@ -93,17 +95,20 @@ export default function SurgeonPanel({ procedures, summary }) {
     },
     progressBarContainer: {
       flex: 1,
+      position: 'relative',
     },
     progressBar: {
       width: '100%',
       height: '8px',
       backgroundColor: '#E0E6ED',
       borderRadius: '4px',
-      overflow: 'hidden',
+      overflow: 'visible',
+      cursor: 'pointer',
     },
     progressBarFill: {
       height: '100%',
       backgroundColor: '#0066CC',
+      borderRadius: '4px',
       transition: 'width 0.3s ease-in-out',
     },
     scoreLabel: {
@@ -111,6 +116,45 @@ export default function SurgeonPanel({ procedures, summary }) {
       color: '#5A6B7A',
       whiteSpace: 'nowrap',
       padding: '0 4px',
+    },
+    tooltip: {
+      position: 'absolute',
+      top: '-8px',
+      left: '50%',
+      transform: 'translateX(-50%) translateY(-100%)',
+      backgroundColor: '#003087',
+      color: 'white',
+      padding: '10px 14px',
+      borderRadius: '8px',
+      fontSize: '12px',
+      width: '240px',
+      zIndex: 100,
+      boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+      pointerEvents: 'none',
+    },
+    tooltipArrow: {
+      position: 'absolute',
+      bottom: '-6px',
+      left: '50%',
+      transform: 'translateX(-50%)',
+      width: 0,
+      height: 0,
+      borderLeft: '6px solid transparent',
+      borderRight: '6px solid transparent',
+      borderTop: '6px solid #003087',
+    },
+    tooltipTitle: {
+      fontWeight: '700',
+      marginBottom: '6px',
+      fontSize: '12px',
+      borderBottom: '1px solid rgba(255,255,255,0.2)',
+      paddingBottom: '6px',
+    },
+    tooltipReason: {
+      fontSize: '11px',
+      margin: '4px 0',
+      lineHeight: '1.4',
+      opacity: 0.9,
     },
     matchReasons: {
       gridColumn: '1 / -1',
@@ -201,9 +245,6 @@ export default function SurgeonPanel({ procedures, summary }) {
       fontWeight: '600',
       transition: 'background-color 0.2s',
     },
-    copyButtonHover: {
-      backgroundColor: '#0052A3',
-    },
     summaryBox: {
       backgroundColor: '#F9FAFB',
       border: '1px solid #E0E6ED',
@@ -263,8 +304,14 @@ export default function SurgeonPanel({ procedures, summary }) {
                   >
                     {proc.confidence_label}
                   </div>
+
+                  {/* ── Confidence bar with tooltip ── */}
                   <div style={styles.progressBarContainer}>
-                    <div style={styles.progressBar}>
+                    <div
+                      style={styles.progressBar}
+                      onMouseEnter={() => setHoveredIdx(idx)}
+                      onMouseLeave={() => setHoveredIdx(null)}
+                    >
                       <div
                         style={{
                           ...styles.progressBarFill,
@@ -272,7 +319,22 @@ export default function SurgeonPanel({ procedures, summary }) {
                         }}
                       />
                     </div>
+
+                    {hoveredIdx === idx && proc.match_reasons && proc.match_reasons.length > 0 && (
+                      <div style={styles.tooltip}>
+                        <div style={styles.tooltipTitle}>
+                          Why {scorePercent.toFixed(0)}% match
+                        </div>
+                        {proc.match_reasons.map((reason, ridx) => (
+                          <div key={ridx} style={styles.tooltipReason}>
+                            ✓ {reason}
+                          </div>
+                        ))}
+                        <div style={styles.tooltipArrow} />
+                      </div>
+                    )}
                   </div>
+
                   <div style={styles.scoreLabel}>{scorePercent.toFixed(0)}%</div>
                 </div>
 

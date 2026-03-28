@@ -30,7 +30,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
     const errors = {};
     requiredFields.forEach((field) => {
       if (!String(data[field] || '').trim()) {
-        errors[field] = field === 'joint' ? 'Please select a body region' : 'This field is required.';
+        errors[field] = field === 'joint' ? 'Please select or enter a body region' : 'This field is required.';
       }
     });
     return errors;
@@ -42,6 +42,9 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
     const { name, value } = e.target;
     const nextData = { ...formData, [name]: value };
     setFormData(nextData);
+    if (name === 'joint') {
+      setSelectedRegion(value);
+    }
     onProfileChange(nextData);
 
     if (attemptedSubmit) {
@@ -190,14 +193,14 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
         <div style={styles.jointSection}>
           <label style={styles.label}>Joint / Area</label>
           <div style={styles.helperText}>
-            Click an anatomical region below to select the affected area.
+            Click an anatomical region below or type the affected area manually.
           </div>
           <BodySelector
             selectedRegion={selectedRegion}
             onRegionSelect={(joint, region) => {
               const nextData = { ...formData, joint };
               setFormData(nextData);
-              setSelectedRegion(region || '');
+              setSelectedRegion(region || joint || '');
               onProfileChange(nextData);
               if (attemptedSubmit) {
                 setFieldErrors(validate(nextData));
@@ -207,6 +210,14 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
           {selectedRegion && (
             <div style={styles.selectedBadge}>Selected area: {selectedRegion}</div>
           )}
+          <input
+            style={styles.input}
+            type="text"
+            name="joint"
+            value={formData.joint}
+            onChange={handleInputChange}
+            placeholder="Or type area manually (e.g., Knee, Shoulder, Spine)"
+          />
           {fieldErrors.joint && <div style={styles.errorText}>{fieldErrors.joint}</div>}
         </div>
 
@@ -283,12 +294,12 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
               ...(isLoading ? styles.submitBtnDisabled : {}),
             }}
             type="submit"
-            disabled={isLoading || !isFormComplete}
+            disabled={isLoading}
             onMouseEnter={(e) => {
-              if (!isLoading && isFormComplete) e.target.style.backgroundColor = '#001f52';
+              if (!isLoading) e.target.style.backgroundColor = '#001f52';
             }}
             onMouseLeave={(e) => {
-              if (!isLoading && isFormComplete) e.target.style.backgroundColor = '#003087';
+              if (!isLoading) e.target.style.backgroundColor = '#003087';
             }}
           >
             {isLoading ? 'Analyzing...' : 'Analyze Patient'}
@@ -310,6 +321,12 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
             Load Demo Patient
           </button>
         </div>
+
+        {!isFormComplete && (
+          <div style={styles.helperText}>
+            Fill all required fields to run analysis.
+          </div>
+        )}
       </form>
     </div>
   );
