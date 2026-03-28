@@ -1,6 +1,24 @@
+import PROCEDURES_CATALOG from '../data/procedures.json';
+
 const API_URL = 'https://api.anthropic.com/v1/messages';
 const MODEL = 'claude-sonnet-4-20250514';
 const API_VERSION = '2023-06-01';
+
+// Compact catalog summary for Claude context — id, procedure, joint, product, keywords
+const CATALOG_SUMMARY = PROCEDURES_CATALOG.map((p) => ({
+  id: p.id,
+  procedure: p.procedure,
+  joint: p.joint,
+  product: p.product,
+  product_url: p.product_url,
+  product_category: p.product_category,
+  keywords: p.keywords,
+  technique: p.technique,
+  age_range: p.age_range,
+  activity_level: p.activity_level,
+  recovery_weeks: p.recovery_weeks,
+  contraindications: p.contraindications,
+}));
 
 export async function generateClarityMD(profile) {
   const apiKey = process.env.REACT_APP_ANTHROPIC_KEY;
@@ -43,9 +61,19 @@ export async function generateClarityMD(profile) {
   };
 
   try {
-    const systemPrompt = `You are a clinical decision support engine for Arthrex, the orthopedic medical device company. You have deep knowledge of Arthrex's full product and procedure catalog. When given a patient profile, return ALL relevant Arthrex procedures ranked by relevance score from highest to lowest.
+    const catalogJson = JSON.stringify(CATALOG_SUMMARY, null, 2);
 
-You MUST respond with ONLY a valid JSON array. No explanation, no markdown, no preamble. Just the raw JSON array.`;
+    const systemPrompt = `You are a clinical decision support engine for Arthrex, the orthopedic medical device company.
+
+CRITICAL RULES:
+1. You MUST ONLY recommend procedures from the ARTHREX PROCEDURE CATALOG provided below. Do NOT invent, hallucinate, or add procedures not in this list.
+2. Use the exact product names, product_urls, and technique notes from the catalog entries. Do not substitute other brand names.
+3. Match procedures to the patient profile using joint, keywords, age_range, activity_level, and diagnosis context.
+4. For joints outside the primary Arthrex surgical portfolio (e.g., isolated neck muscle strain, isolated spine), return the relevant conservative or injection entries from the catalog if they exist, and explain honestly that surgical Arthrex procedures may not be indicated.
+5. Respond with ONLY a valid JSON array — no markdown, no explanation, no preamble.
+
+ARTHREX PROCEDURE CATALOG (your only source of truth):
+${catalogJson}`;
 
     const userPrompt = `Patient profile:
 - Age: ${profile.age}
@@ -55,33 +83,36 @@ You MUST respond with ONLY a valid JSON array. No explanation, no markdown, no p
 - Activity level: ${profile.activity}
 - Prior treatments: ${profile.prior_treatments}
 
-Return a JSON array of ALL Arthrex procedures relevant to this patient, sorted by relevance_score descending (highest first).
+From the catalog above, return a JSON array of the most relevant procedures for this patient, sorted by relevance_score descending.
 
-Each object in the array must have exactly these fields:
+Each object must have exactly these fields:
 {
   "rank": 1,
-  "procedure": "Full procedure name",
-  "product": "Arthrex product name with trademark symbol if applicable",
-  "product_category": "Category e.g. Ligament Fixation",
+  "procedure": "Exact procedure name from catalog",
+  "product": "Exact product name from catalog entry",
+  "product_url": "Exact product_url from catalog entry",
+  "product_category": "Exact product_category from catalog entry",
   "relevance_score": 0.95,
-  "match_reasons": ["reason 1", "reason 2"],
-  "technique_notes": "Brief clinical technique description",
+  "match_reasons": ["brief reason matched to this patient", "another reason"],
+  "technique_notes": "Exact technique field from catalog with any patient-specific notes appended",
   "recovery_weeks": 24,
   "contraindications": ["contraindication 1", "contraindication 2"],
-  "arthrex_url": "https://www.arthrex.com/[relevant-path]",
+  "arthrex_url": "Exact product_url from catalog entry",
   "confidence_label": "Strong Match"
 }
 
 Scoring rules:
 - 0.85–1.00 = Strong Match (label: "Strong Match")
-- 0.60–0.84 = Good Match (label: "Good Match")  
+- 0.60–0.84 = Good Match (label: "Good Match")
 - 0.35–0.59 = Possible Match (label: "Possible Match")
 - Below 0.35 = exclude entirely
 
-Include ALL procedures above 0.35, even if there are 10–15 of them.
-Sort strictly by relevance_score descending.
-Use real Arthrex product names and real arthrex.com URL paths.
-arthrex_url must start with https://www.arthrex.com/`;
+Rules:
+- Include all procedures above 0.35, sorted by relevance_score descending.
+- ONLY use procedures from the catalog. Do not add any procedure not in the list.
+- Copy product, product_url, product_category, and technique_notes EXACTLY from the matching catalog entry.
+- For neck/spine complaints without neurological signs, return the conservative and injection entries from the catalog (ids 45, 46) and set relevance_score appropriately. Do not return knee or elbow procedures for neck pain.
+- If truly no catalog entry matches above 0.35, return an empty array []`;
 
     const recommendationText = await makeRequest(userPrompt, systemPrompt);
 
