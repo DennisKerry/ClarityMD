@@ -14,9 +14,48 @@ function inferPainTypes(diagnosisText = '') {
   return inferred.length ? inferred : ['mechanical'];
 }
 
+function buildFallbackSummaries(profile, rankedProcedures, reason = '') {
+  const top3 = rankedProcedures.slice(0, 3);
+  const top = top3[0] || {};
+
+  const surgeonLines = [
+    'Clinical summary fallback (AI summary unavailable).',
+    reason ? `Reason: ${reason}` : '',
+    '',
+    `Primary recommendation: ${top.procedure || 'No procedure available'}`,
+    `Product: ${top.product || 'N/A'}`,
+    `Joint/Area: ${profile?.joint || 'N/A'}`,
+    `Recovery estimate: ${top.recovery_weeks || 'N/A'} weeks`,
+    '',
+    'Top ranked procedures:',
+    ...top3.map(
+      (p) => `- #${p.rank || '?'} ${p.procedure} (${p.relevance_score ?? 'n/a'} score)`
+    ),
+    '',
+    `Contraindications: ${Array.isArray(top.contraindications) && top.contraindications.length
+      ? top.contraindications.join(', ')
+      : 'None documented'}`,
+  ].filter(Boolean);
+
+  const patientLines = [
+    'Your care team found a strong procedure match based on your profile.',
+    top.procedure ? `Recommended procedure: ${top.procedure}.` : '',
+    top.product ? `Likely system/product: ${top.product}.` : '',
+    top.recovery_weeks ? `Expected recovery is about ${top.recovery_weeks} weeks.` : '',
+    'A full AI-written explanation is temporarily unavailable, but your ranked options are ready for review.',
+  ].filter(Boolean);
+
+  return {
+    surgeonSummary: surgeonLines.join('\n'),
+    patientSummary: patientLines.join(' '),
+  };
+}
+
 export async function generateSummaries(profile, rankedProcedures) {
   const apiKey = process.env.REACT_APP_ANTHROPIC_KEY;
-  if (!apiKey) throw new Error('Anthropic API key not configured');
+  if (!apiKey) {
+    return buildFallbackSummaries(profile, rankedProcedures, 'Anthropic API key not configured');
+  }
 
   const normalizedProfile = {
     ...profile,
@@ -95,10 +134,17 @@ Friendly, 6th grade reading level, under 200 words.`;
     return data?.content?.[0]?.text || '';
   }
 
-  const [surgeonSummary, patientSummary] = await Promise.all([
-    callClaude(surgeonPrompt),
-    callClaude(patientPrompt),
-  ]);
+  try {
+    const [surgeonSummary, patientSummary] = await Promise.all([
+      callClaude(surgeonPrompt),
+      callClaude(patientPrompt),
+    ]);
 
-  return { surgeonSummary, patientSummary };
+    return { surgeonSummary, patientSummary };
+  } catch (error) {
+    const message = String(error?.message || 'AI summary unavailable');
+    const lowCredit = /credit balance is too low|billing|insufficient/i.test(message);
+    const reason = lowCredit ? 'Anthropic credit balance is too low' : message;
+    return buildFallbackSummaries(profile, rankedProcedures, reason);
+  }
 }
