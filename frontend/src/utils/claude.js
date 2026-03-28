@@ -4,24 +4,18 @@ const API_VERSION = '2023-06-01';
 
 export async function generateSummaries(profile, topProcedures) {
   const apiKey = process.env.REACT_APP_ANTHROPIC_KEY;
-  
-  if (!apiKey) {
-    throw new Error('REACT_APP_ANTHROPIC_KEY environment variable not set');
-  }
-
-  const proceduresText = topProcedures
-    .map((proc) => `- ${proc.procedure} (${proc.joint}): ${proc.technique}`)
-    .join('\n');
+  const primaryProcedure = topProcedures[0] || {};
 
   const profileText = `
   Age: ${profile.age}
+  Sex: ${profile.sex}
   Joint: ${profile.joint}
   Diagnosis: ${profile.diagnosis}
   Activity Level: ${profile.activity}
   Prior Treatments: ${profile.prior_treatments}
   `;
 
-  const surgeonPrompt = `You are an experienced orthopedic surgeon. Review the following patient profile and recommended procedures. Provide a clinical brief that includes:
+  const surgeonPrompt = `You are an experienced orthopedic surgeon. Review the following patient profile and top recommendation. Provide a clinical brief that includes:
 1. Procedure rationale (why this procedure is suitable)
 2. Technique notes and critical considerations
 3. Any contraindication flags to watch for
@@ -30,8 +24,9 @@ export async function generateSummaries(profile, topProcedures) {
 Patient Profile:
 ${profileText}
 
-Recommended Procedures:
-${proceduresText}
+Top Recommendation:
+- Procedure: ${primaryProcedure.procedure || 'N/A'}
+- Product: ${primaryProcedure.product || 'N/A'}
 
 Keep response concise but clinically thorough (200-300 words). Use medical terminology.`;
 
@@ -41,13 +36,26 @@ Keep response concise but clinically thorough (200-300 words). Use medical termi
 3. What the recovery process looks like
 4. Key milestones to expect
 
-Patient Profile:
-${profileText}
+Recommendation:
+- Procedure: ${primaryProcedure.procedure || 'N/A'}
+- Product: ${primaryProcedure.product || 'N/A'}
+- Recovery (weeks): ${primaryProcedure.recovery_weeks ?? 'N/A'}
 
-Recommended Procedures:
-${proceduresText}
+Write this at a 6th grade reading level and keep response under 200 words. Use very simple language and short sentences.`;
 
-Keep response under 200 words. Use simple language, no medical jargon.`;
+  const defaultSurgeonFallback =
+    `${primaryProcedure.procedure || 'Top procedure'} with ${primaryProcedure.product || 'recommended product'} appears suitable based on joint, diagnosis, activity, and prior treatment history. Review contraindications and discuss timing with the patient.`;
+
+  const defaultPatientFallback =
+    `Your top option is ${primaryProcedure.procedure || 'a procedure'} using ${primaryProcedure.product || 'the recommended product'}. Recovery is about ${primaryProcedure.recovery_weeks ?? 'several'} weeks. Your surgeon will explain each step and what to expect.`;
+
+  if (!apiKey) {
+    return {
+      surgeonSummary: defaultSurgeonFallback,
+      patientSummary: defaultPatientFallback,
+      hadError: true,
+    };
+  }
 
   const headers = {
     'x-api-key': apiKey,
@@ -81,18 +89,29 @@ Keep response under 200 words. Use simple language, no medical jargon.`;
     return data.content[0].text;
   };
 
-  try {
-    const [surgeonSummary, patientSummary] = await Promise.all([
-      makeRequest(surgeonPrompt),
-      makeRequest(patientPrompt),
-    ]);
+  const surgeonTask = (async () => {
+    try {
+      return await makeRequest(surgeonPrompt);
+    } catch (error) {
+      console.error('Error generating surgeon summary:', error);
+      return defaultSurgeonFallback;
+    }
+  })();
 
-    return {
-      surgeonSummary,
-      patientSummary,
-    };
-  } catch (error) {
-    console.error('Error generating summaries:', error);
-    throw error;
-  }
+  const patientTask = (async () => {
+    try {
+      return await makeRequest(patientPrompt);
+    } catch (error) {
+      console.error('Error generating patient summary:', error);
+      return defaultPatientFallback;
+    }
+  })();
+
+  const [surgeonSummary, patientSummary] = await Promise.all([surgeonTask, patientTask]);
+
+  return {
+    surgeonSummary,
+    patientSummary,
+    hadError: surgeonSummary === defaultSurgeonFallback || patientSummary === defaultPatientFallback,
+  };
 }

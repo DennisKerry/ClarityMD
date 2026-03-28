@@ -3,19 +3,21 @@ import PatientForm from './components/PatientForm';
 import SurgeonPanel from './components/SurgeonPanel';
 import PatientPanel from './components/PatientPanel';
 import LoadingSpinner from './components/LoadingSpinner';
-import { scoreAndRankProcedures } from './utils/recommend';
+import { recommendProcedures } from './utils/recommend';
 import { generateSummaries } from './utils/claude';
 import proceduresData from './data/procedures.json';
 
+const INITIAL_PROFILE = {
+  age: '',
+  sex: '',
+  joint: '',
+  diagnosis: '',
+  activity: '',
+  prior_treatments: '',
+};
+
 function App() {
-  const [profile, setProfile] = useState({
-    age: '',
-    sex: '',
-    joint: '',
-    diagnosis: '',
-    activity: '',
-    prior_treatments: '',
-  });
+  const [profile, setProfile] = useState(INITIAL_PROFILE);
   const [results, setResults] = useState(null);
   const [surgeonSummary, setSurgeonSummary] = useState(null);
   const [patientSummary, setPatientSummary] = useState(null);
@@ -28,52 +30,42 @@ function App() {
   };
 
   const handleStartOver = () => {
-    setProfile({
-      age: '',
-      sex: '',
-      joint: '',
-      diagnosis: '',
-      activity: '',
-      prior_treatments: '',
-    });
+    setProfile(INITIAL_PROFILE);
     setResults(null);
     setSurgeonSummary(null);
     setPatientSummary(null);
+    setLoading(false);
     setError(null);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (submittedProfile) => {
+    const activeProfile = submittedProfile || profile;
+
     try {
       setError(null);
-      setLoading(true);
+      setProfile(activeProfile);
 
-      // Validate profile
-      if (!profile.joint || !profile.diagnosis) {
-        throw new Error('Please fill in at least Joint and Diagnosis fields');
-      }
-
-      // Score and rank procedures
-      const topProcedures = scoreAndRankProcedures(profile, proceduresData);
+      // Run recommendation logic first (synchronous).
+      const topProcedures = recommendProcedures(activeProfile, proceduresData);
 
       if (topProcedures.length === 0) {
-        throw new Error('No matching procedures found. Try different inputs.');
+        setResults(null);
+        setSurgeonSummary(null);
+        setPatientSummary(null);
+        setError('No strong matches found — try adjusting the diagnosis description.');
+        return;
       }
 
       setResults(topProcedures);
+      setLoading(true);
 
-      // Generate Claude summaries
-      try {
-        const summaries = await generateSummaries(profile, topProcedures);
-        setSurgeonSummary(summaries.surgeonSummary);
-        setPatientSummary(summaries.patientSummary);
-      } catch (claudeError) {
-        console.warn('Claude API unavailable, using placeholder summaries:', claudeError);
-        setSurgeonSummary(
-          `${topProcedures.map((p) => p.procedure).join(', ')} recommended based on patient profile.`
-        );
-        setPatientSummary(
-          `The recommended procedures are designed to address your condition and improve function. Discuss these options with your surgeon.`
-        );
+      // Then generate summaries.
+      const summaries = await generateSummaries(activeProfile, topProcedures);
+      setSurgeonSummary(summaries.surgeonSummary);
+      setPatientSummary(summaries.patientSummary);
+
+      if (summaries.hadError) {
+        setError('Claude API was partially unavailable. Fallback summary text is shown.');
       }
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
@@ -185,7 +177,7 @@ function App() {
 
           <div>
             {results ? (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
                 <SurgeonPanel procedures={results} summary={surgeonSummary} />
                 <PatientPanel procedures={results} summary={patientSummary} />
                 <div style={{ gridColumn: '1 / -1' }}>
