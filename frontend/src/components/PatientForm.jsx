@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import BodySelector from './BodySelector';
 
 export default function PatientForm({ profile, onProfileChange, onSubmit, isLoading }) {
   const demoPatient = {
@@ -99,6 +100,29 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
       fontWeight: '500',
       color: '#2C3E50',
     },
+    jointSection: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px',
+      marginBottom: '4px',
+    },
+    selectedBadge: {
+      display: 'inline-block',
+      alignSelf: 'flex-start',
+      padding: '6px 12px',
+      borderRadius: '999px',
+      backgroundColor: '#EAF2FF',
+      border: '1px solid #003087',
+      color: '#003087',
+      fontSize: '12px',
+      fontWeight: '700',
+      letterSpacing: '0.2px',
+    },
+    helperText: {
+      fontSize: '12px',
+      color: '#5A6B7A',
+      marginTop: '-4px',
+    },
     input: {
       padding: '10px 12px',
       fontSize: '14px',
@@ -160,6 +184,26 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
     <div style={styles.container}>
       <h2 style={styles.title}>Patient Intake</h2>
       <form style={styles.form} onSubmit={handleSubmit}>
+        <div style={styles.jointSection}>
+          <label style={styles.label}>Joint / Area (click 3D model)</label>
+          <div style={styles.helperText}>Placeholder: Click a highlighted joint hotspot to select.</div>
+          <BodySelector
+            selectedJoint={formData.joint}
+            onJointSelect={(joint) => {
+              const nextData = { ...formData, joint };
+              setFormData(nextData);
+              onProfileChange(nextData);
+              if (attemptedSubmit) {
+                setFieldErrors(validate(nextData));
+              }
+            }}
+          />
+          {formData.joint && (
+            <div style={styles.selectedBadge}>Selected area: {formData.joint}</div>
+          )}
+          {fieldErrors.joint && <div style={styles.errorText}>{fieldErrors.joint}</div>}
+        </div>
+
         <div style={styles.formGroup}>
           <label style={styles.label}>Age</label>
           <input
@@ -184,19 +228,6 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
             placeholder="e.g., Male"
           />
           {fieldErrors.sex && <div style={styles.errorText}>{fieldErrors.sex}</div>}
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Joint / Area</label>
-          <input
-            style={styles.input}
-            type="text"
-            name="joint"
-            value={formData.joint}
-            onChange={handleInputChange}
-            placeholder="e.g., Knee"
-          />
-          {fieldErrors.joint && <div style={styles.errorText}>{fieldErrors.joint}</div>}
         </div>
 
         <div style={styles.formGroup}>
