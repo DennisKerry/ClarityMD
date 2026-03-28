@@ -3,9 +3,7 @@ import PatientForm from './components/PatientForm';
 import SurgeonPanel from './components/SurgeonPanel';
 import PatientPanel from './components/PatientPanel';
 import LoadingSpinner from './components/LoadingSpinner';
-import { recommendProcedures } from './utils/recommend';
-import { generateSummaries } from './utils/claude';
-import proceduresData from './data/procedures.json';
+import { generateClarityMD } from './utils/claude';
 
 const INITIAL_PROFILE = {
   age: '',
@@ -22,6 +20,7 @@ function App() {
   const [surgeonSummary, setSurgeonSummary] = useState(null);
   const [patientSummary, setPatientSummary] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState(null);
 
   const handleProfileChange = (newProfile) => {
@@ -44,28 +43,43 @@ function App() {
     try {
       setError(null);
       setProfile(activeProfile);
-
-      // Run recommendation logic first (synchronous).
-      const topProcedures = recommendProcedures(activeProfile, proceduresData);
-
-      if (topProcedures.length === 0) {
-        setResults(null);
-        setSurgeonSummary(null);
-        setPatientSummary(null);
-        setError('No strong matches found — try adjusting the diagnosis description.');
-        return;
-      }
-
-      setResults(topProcedures);
       setLoading(true);
 
-      // Then generate summaries.
-      const summaries = await generateSummaries(activeProfile, topProcedures);
-      setSurgeonSummary(summaries.surgeonSummary);
-      setPatientSummary(summaries.patientSummary);
+      // Cycle through loading messages every 2 seconds
+      const messages = [
+        'Searching Arthrex procedure catalog...',
+        'Ranking procedures by relevance...',
+        'Generating clinical summaries...',
+      ];
+      let messageIndex = 0;
+      setLoadingMessage(messages[messageIndex]);
 
-      if (summaries.hadError) {
-        setError('Claude API was partially unavailable. Fallback summary text is shown.');
+      const messageInterval = setInterval(() => {
+        messageIndex = (messageIndex + 1) % messages.length;
+        setLoadingMessage(messages[messageIndex]);
+      }, 2000);
+
+      try {
+        // Generate both procedures and summaries via Claude
+        const result = await generateClarityMD(activeProfile);
+
+        clearInterval(messageInterval);
+
+        if (!result.procedures || result.procedures.length === 0) {
+          setResults(null);
+          setSurgeonSummary(null);
+          setPatientSummary(null);
+          setError('No strong matches found — try adjusting the diagnosis description.');
+          setLoading(false);
+          return;
+        }
+
+        setResults(result.procedures);
+        setSurgeonSummary(result.surgeonSummary);
+        setPatientSummary(result.patientSummary);
+      } catch (apiErr) {
+        clearInterval(messageInterval);
+        throw apiErr;
       }
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
@@ -74,6 +88,7 @@ function App() {
       setPatientSummary(null);
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -207,7 +222,7 @@ function App() {
                   fontSize: '14px',
                 }}
               >
-                {loading ? 'Analyzing...' : 'Submit patient profile to see recommendations'}
+                {loading ? loadingMessage || 'Searching Arthrex procedure catalog...' : 'Submit patient profile to see recommendations'}
               </div>
             )}
           </div>
