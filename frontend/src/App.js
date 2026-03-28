@@ -1,86 +1,230 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react';
+import PatientForm from './components/PatientForm';
+import SurgeonPanel from './components/SurgeonPanel';
+import PatientPanel from './components/PatientPanel';
+import LoadingSpinner from './components/LoadingSpinner';
+import { scoreAndRankProcedures } from './utils/recommend';
+import { generateSummaries } from './utils/claude';
+import proceduresData from './data/procedures.json';
 
-function App(){
-  const [profile, setProfile] = useState({age:'', sex:'', joint:'', diagnosis:'', activity_level:'', prior_treatments:''})
-  const [results, setResults] = useState(null)
+function App() {
+  const [profile, setProfile] = useState({
+    age: '',
+    sex: '',
+    joint: '',
+    diagnosis: '',
+    activity: '',
+    prior_treatments: '',
+  });
+  const [results, setResults] = useState(null);
+  const [surgeonSummary, setSurgeonSummary] = useState(null);
+  const [patientSummary, setPatientSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  function handleChange(e){
-    const {name, value} = e.target
-    setProfile(p => ({...p, [name]: value}))
-  }
+  const handleProfileChange = (newProfile) => {
+    setProfile(newProfile);
+    setError(null);
+  };
 
-  async function handleSubmit(e){
-    e.preventDefault()
-    const res = await fetch('http://localhost:5000/recommend', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(profile)
-    })
-    const data = await res.json()
-    setResults(data)
-  }
+  const handleStartOver = () => {
+    setProfile({
+      age: '',
+      sex: '',
+      joint: '',
+      diagnosis: '',
+      activity: '',
+      prior_treatments: '',
+    });
+    setResults(null);
+    setSurgeonSummary(null);
+    setPatientSummary(null);
+    setError(null);
+  };
+
+  const handleSubmit = async () => {
+    try {
+      setError(null);
+      setLoading(true);
+
+      // Validate profile
+      if (!profile.joint || !profile.diagnosis) {
+        throw new Error('Please fill in at least Joint and Diagnosis fields');
+      }
+
+      // Score and rank procedures
+      const topProcedures = scoreAndRankProcedures(profile, proceduresData);
+
+      if (topProcedures.length === 0) {
+        throw new Error('No matching procedures found. Try different inputs.');
+      }
+
+      setResults(topProcedures);
+
+      // Generate Claude summaries
+      try {
+        const summaries = await generateSummaries(profile, topProcedures);
+        setSurgeonSummary(summaries.surgeonSummary);
+        setPatientSummary(summaries.patientSummary);
+      } catch (claudeError) {
+        console.warn('Claude API unavailable, using placeholder summaries:', claudeError);
+        setSurgeonSummary(
+          `${topProcedures.map((p) => p.procedure).join(', ')} recommended based on patient profile.`
+        );
+        setPatientSummary(
+          `The recommended procedures are designed to address your condition and improve function. Discuss these options with your surgeon.`
+        );
+      }
+    } catch (err) {
+      setError(err.message || 'An error occurred. Please try again.');
+      setResults(null);
+      setSurgeonSummary(null);
+      setPatientSummary(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const styles = {
+    app: {
+      minHeight: '100vh',
+      backgroundColor: '#F4F6F9',
+      padding: '20px',
+    },
+    header: {
+      textAlign: 'center',
+      marginBottom: '32px',
+    },
+    logo: {
+      fontSize: '32px',
+      fontWeight: '700',
+      color: '#003087',
+      marginBottom: '8px',
+      letterSpacing: '-0.5px',
+    },
+    subtitle: {
+      fontSize: '14px',
+      color: '#5A6B7A',
+      fontWeight: '400',
+    },
+    container: {
+      maxWidth: '1400px',
+      margin: '0 auto',
+      display: 'grid',
+      gridTemplateColumns: results ? '1fr 1fr' : '1fr 1fr',
+      gap: '24px',
+    },
+    dashboard: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: '24px',
+    },
+    errorBox: {
+      backgroundColor: '#FADBD8',
+      border: '1px solid #F5B7B1',
+      borderRadius: '10px',
+      padding: '16px',
+      color: '#78281F',
+      marginBottom: '16px',
+      fontSize: '14px',
+      lineHeight: '1.5',
+    },
+    startOverButton: {
+      marginTop: '24px',
+      padding: '12px 24px',
+      backgroundColor: '#003087',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+      width: '100%',
+      transition: 'background-color 0.2s',
+    },
+    startOverButtonHover: {
+      backgroundColor: '#001f52',
+    },
+    fadeIn: {
+      animation: 'fadeIn 0.4s ease-in-out',
+    },
+    keyframes: `
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `,
+  };
 
   return (
-    <div style={{display:'flex', gap:20, padding:20}}>
-      <div style={{flex:1}}>
-        <h2>Patient Profile</h2>
-        <form onSubmit={handleSubmit}>
-          <div>
-            <label>Age</label>
-            <input name="age" value={profile.age} onChange={handleChange} />
-          </div>
-          <div>
-            <label>Sex</label>
-            <input name="sex" value={profile.sex} onChange={handleChange} />
-          </div>
-          <div>
-            <label>Joint/Area</label>
-            <input name="joint" value={profile.joint} onChange={handleChange} />
-          </div>
-          <div>
-            <label>Diagnosis / Symptoms</label>
-            <textarea name="diagnosis" value={profile.diagnosis} onChange={handleChange} />
-          </div>
-          <div>
-            <label>Activity Level</label>
-            <input name="activity_level" value={profile.activity_level} onChange={handleChange} />
-          </div>
-          <div>
-            <label>Prior Treatments</label>
-            <input name="prior_treatments" value={profile.prior_treatments} onChange={handleChange} />
-          </div>
-          <button type="submit">Recommend</button>
-        </form>
-      </div>
-      <div style={{flex:1}}>
-        <h2>Recommendations</h2>
-        {results ? (
-          <div>
-            <h3>Surgeon View</h3>
-            {results.surgeon_recommendations.map((r, i)=> (
-              <div key={i} style={{border:'1px solid #ddd', padding:8, marginBottom:8}}>
-                <strong>{r.procedure} ({r.joint})</strong>
-                <div>Product: {r.arthrex_product}</div>
-                <div>Technique: {r.technique_notes}</div>
-                <div>Confidence: {r.confidence}%</div>
-              </div>
-            ))}
+    <>
+      <style>{styles.keyframes}</style>
+      <div style={styles.app}>
+        <div style={styles.header}>
+          <div style={styles.logo}>ClarityMD</div>
+          <div style={styles.subtitle}>Orthopedic Procedure Recommendation Engine</div>
+        </div>
 
-            <h3>Patient View</h3>
-            {results.patient_summaries.map((p, i)=> (
-              <div key={i} style={{border:'1px dashed #ccc', padding:8, marginBottom:8}}>
-                <strong>{p.procedure}</strong>
-                <p>{p.summary}</p>
-                <div>Confidence: {p.confidence}%</div>
-              </div>
-            ))}
+        {error && <div style={styles.errorBox}>❌ {error}</div>}
+
+        <div style={styles.container}>
+          <div>
+            <PatientForm
+              profile={profile}
+              onProfileChange={handleProfileChange}
+              onSubmit={handleSubmit}
+              isLoading={loading}
+            />
           </div>
-        ) : (
-          <div>No results yet.</div>
-        )}
+
+          <div>
+            {results ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+                <SurgeonPanel procedures={results} summary={surgeonSummary} />
+                <PatientPanel procedures={results} summary={patientSummary} />
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <button
+                    style={styles.startOverButton}
+                    onClick={handleStartOver}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = '#001f52';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = '#003087';
+                    }}
+                  >
+                    ↻ Start Over
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '40px 20px',
+                  backgroundColor: 'white',
+                  border: '1px solid #E0E6ED',
+                  borderRadius: '10px',
+                  color: '#5A6B7A',
+                  fontSize: '14px',
+                }}
+              >
+                {loading ? 'Analyzing...' : 'Submit patient profile to see recommendations'}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {loading && <LoadingSpinner />}
       </div>
-    </div>
-  )
+    </>
+  );
 }
 
-export default App
+export default App;
