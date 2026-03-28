@@ -5,15 +5,22 @@ const API_VERSION = '2023-06-01';
 export async function generateClarityMD(profile) {
   const apiKey = process.env.REACT_APP_ANTHROPIC_KEY;
 
-  if (!apiKey) {
-    throw new Error(
-      'API key not configured. Please set REACT_APP_ANTHROPIC_KEY environment variable. ' +
-      'Create a .env.local file in the frontend directory with: REACT_APP_ANTHROPIC_KEY=your_key_here'
+  // Validate API key is configured and not a placeholder
+  if (!apiKey || apiKey.trim() === "" || apiKey === "YOUR_KEY_HERE" || apiKey === "sk-ant-api03-...") {
+    console.error(
+      "CLARITY_MD: API key missing or invalid. " +
+      "Check .env file in /frontend folder and restart dev server. " +
+      "For production, check Vercel environment variables."
     );
+    return {
+      procedures: [],
+      surgeonSummary: "⚠️ API key not configured.",
+      patientSummary: "⚠️ API key not configured."
+    };
   }
 
   const headers = {
-    'x-api-key': apiKey,
+    'x-api-key': process.env.REACT_APP_ANTHROPIC_KEY,
     'anthropic-version': API_VERSION,
     'anthropic-dangerous-direct-browser-access': 'true',
     'content-type': 'application/json',
