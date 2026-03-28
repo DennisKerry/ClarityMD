@@ -3,7 +3,8 @@ import PatientForm from './components/PatientForm';
 import SurgeonPanel from './components/SurgeonPanel';
 import PatientPanel from './components/PatientPanel';
 import LoadingSpinner from './components/LoadingSpinner';
-import { generateClarityMD } from './utils/claude';
+import { recommendProcedures } from './utils/recommend';
+import { generateSummaries } from './utils/claude';
 
 const INITIAL_PROFILE = {
   age: '',
@@ -45,51 +46,25 @@ function App() {
       setProfile(activeProfile);
       setLoading(true);
 
-      // Cycle through loading messages every 2 seconds
-      const messages = [
-        'Searching Arthrex procedure catalog...',
-        'Ranking procedures by relevance...',
-        'Generating clinical summaries...',
-      ];
-      let messageIndex = 0;
-      setLoadingMessage(messages[messageIndex]);
+      setLoadingMessage('Searching Arthrex procedure database...');
+      const ranked = await recommendProcedures(activeProfile);
+      setResults(ranked);
 
-      const messageInterval = setInterval(() => {
-        messageIndex = (messageIndex + 1) % messages.length;
-        setLoadingMessage(messages[messageIndex]);
-      }, 2000);
-
-      try {
-        // Generate both procedures and summaries via Claude
-        const result = await generateClarityMD(activeProfile);
-
-        clearInterval(messageInterval);
-
-        if (result.error) {
-          setResults(null);
-          setSurgeonSummary(null);
-          setPatientSummary(null);
-          setError(result.error);
-          setLoading(false);
-          return;
-        }
-
-        if (!result.procedures || result.procedures.length === 0) {
-          setResults(null);
-          setSurgeonSummary(null);
-          setPatientSummary(null);
-          setError('No strong matches found — try adjusting the diagnosis description.');
-          setLoading(false);
-          return;
-        }
-
-        setResults(result.procedures);
-        setSurgeonSummary(result.surgeonSummary);
-        setPatientSummary(result.patientSummary);
-      } catch (apiErr) {
-        clearInterval(messageInterval);
-        throw apiErr;
+      if (ranked.length === 0) {
+        setSurgeonSummary(null);
+        setPatientSummary(null);
+        setError('No procedures matched this profile. Try expanding your diagnosis description.');
+        return;
       }
+
+      setLoadingMessage('Generating clinical summaries...');
+      const { surgeonSummary: surgeonText, patientSummary: patientText } = await generateSummaries(
+        activeProfile,
+        ranked
+      );
+
+      setSurgeonSummary(surgeonText);
+      setPatientSummary(patientText);
     } catch (err) {
       setError(err.message || 'An error occurred. Please try again.');
       setResults(null);

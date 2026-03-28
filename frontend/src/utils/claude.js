@@ -1,5 +1,3 @@
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
-
 function inferPainTypes(diagnosisText = '') {
   const text = String(diagnosisText).toLowerCase();
   const inferred = [];
@@ -16,24 +14,91 @@ function inferPainTypes(diagnosisText = '') {
   return inferred.length ? inferred : ['mechanical'];
 }
 
-export async function generateClarityMD(profile) {
-  const payload = {
+export async function generateSummaries(profile, rankedProcedures) {
+  const apiKey = process.env.REACT_APP_ANTHROPIC_KEY;
+  if (!apiKey) throw new Error('Anthropic API key not configured');
+
+  const normalizedProfile = {
     ...profile,
-    pain_types: Array.isArray(profile?.pain_types) && profile.pain_types.length
-      ? profile.pain_types
-      : inferPainTypes(profile?.diagnosis || ''),
+    pain_types:
+      Array.isArray(profile?.pain_types) && profile.pain_types.length
+        ? profile.pain_types
+        : inferPainTypes(profile?.diagnosis || ''),
   };
 
-  const response = await fetch(`${BACKEND_URL}/recommend`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
+  const top3 = rankedProcedures.slice(0, 3);
 
-  if (!response.ok) {
-    const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || 'Backend error');
+  const surgeonPrompt = `You are a clinical decision support assistant for orthopedic surgeons.
+
+Patient: ${normalizedProfile.age}yo ${normalizedProfile.sex}
+Area: ${normalizedProfile.joint}
+Pain types: ${normalizedProfile.pain_types?.join(', ')}
+Diagnosis: ${normalizedProfile.diagnosis}
+Activity: ${normalizedProfile.activity}
+Prior treatments: ${normalizedProfile.prior_treatments}
+
+ML-ranked Arthrex procedures (top 3 of ${rankedProcedures.length} matched):
+${JSON.stringify(
+    top3.map((p) => ({
+      rank: p.rank,
+      procedure: p.procedure,
+      product: p.product,
+      score: p.relevance_score,
+      technique: p.technique,
+      contraindications: p.contraindications,
+    })),
+    null,
+    2
+  )}
+
+Write a clinical brief:
+1. Primary Recommendation & Rationale
+2. Arthrex Product & Technique Notes
+3. Implant Sizing Considerations
+4. Contraindication Flags
+Clinical tone. Under 300 words.`;
+
+  const patientPrompt = `Explain this to a patient with no medical background.
+Procedure: ${top3[0]?.procedure}
+Product: ${top3[0]?.product}
+Recovery: ${top3[0]?.recovery_weeks} weeks
+
+Cover:
+1. What is this procedure?
+2. Why is it right for you?
+3. What happens during it?
+4. What does recovery look like?
+Friendly, 6th grade reading level, under 200 words.`;
+
+  async function callClaude(prompt) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `API error ${res.status}`);
+    }
+
+    const data = await res.json();
+    return data?.content?.[0]?.text || '';
   }
 
-  return await response.json();
+  const [surgeonSummary, patientSummary] = await Promise.all([
+    callClaude(surgeonPrompt),
+    callClaude(patientPrompt),
+  ]);
+
+  return { surgeonSummary, patientSummary };
 }
