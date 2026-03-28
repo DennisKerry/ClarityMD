@@ -65,6 +65,15 @@ function App() {
 
         clearInterval(messageInterval);
 
+        if (result.error) {
+          setResults(null);
+          setSurgeonSummary(null);
+          setPatientSummary(null);
+          setError(result.error);
+          setLoading(false);
+          return;
+        }
+
         if (!result.procedures || result.procedures.length === 0) {
           setResults(null);
           setSurgeonSummary(null);
