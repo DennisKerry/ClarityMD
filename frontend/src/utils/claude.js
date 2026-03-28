@@ -6,12 +6,10 @@ export async function generateClarityMD(profile) {
   const apiKey = process.env.REACT_APP_ANTHROPIC_KEY;
 
   if (!apiKey) {
-    return {
-      procedures: [],
-      surgeonSummary: 'API key not configured',
-      patientSummary: 'API key not configured',
-      error: 'REACT_APP_ANTHROPIC_KEY environment variable not set',
-    };
+    throw new Error(
+      'API key not configured. Please set REACT_APP_ANTHROPIC_KEY environment variable. ' +
+      'Create a .env.local file in the frontend directory with: REACT_APP_ANTHROPIC_KEY=your_key_here'
+    );
   }
 
   const headers = {
@@ -89,16 +87,13 @@ arthrex_url must start with https://www.arthrex.com/`;
     try {
       const clean = recommendationText.replace(/```json|```/g, '').trim();
       procedures = JSON.parse(clean);
-      if (!Array.isArray(procedures)) procedures = [];
+      if (!Array.isArray(procedures)) {
+        throw new Error('Claude returned non-array response for procedures');
+      }
     } catch (parseErr) {
       console.error('JSON parse error:', parseErr);
       console.error('Raw response:', recommendationText);
-      return {
-        procedures: [],
-        surgeonSummary: 'Error parsing procedures',
-        patientSummary: 'Error parsing procedures',
-        error: `Failed to parse response: ${parseErr.message}`,
-      };
+      throw new Error(`Failed to parse procedures from Claude: ${parseErr.message}`);
     }
 
     const topThree = procedures.slice(0, 3);
@@ -155,11 +150,6 @@ Friendly tone. 6th grade reading level. Under 200 words.`;
     };
   } catch (err) {
     console.error('Error in generateClarityMD:', err);
-    return {
-      procedures: [],
-      surgeonSummary: `Error: ${err.message}`,
-      patientSummary: `Error: ${err.message}`,
-      error: err.message,
-    };
+    throw err;
   }
 }
