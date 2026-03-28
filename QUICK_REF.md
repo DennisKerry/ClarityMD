@@ -4,18 +4,19 @@
 
 ```bash
 # 1. Get API key
-# Visit: https://console.anthropic.com/account/keys
+# Visit: https://console.groq.com (free)
 
 # 2. Setup
-cd frontend
+cd backend
+pip install -r requirements.txt
+# Edit backend/.env and add: GROQ_API_KEY=gsk_YOUR_KEY_HERE
+
+# 3. Run backend
+python app.py
+
+# 4. Run frontend
+cd ../frontend
 npm install
-cp .env.example .env
-
-# 3. Configure
-# Edit .env and add your key:
-# REACT_APP_ANTHROPIC_KEY=sk-ant-YOUR_KEY_HERE
-
-# 4. Run
 npm start
 # Opens http://localhost:3000
 ```

@@ -109,7 +109,7 @@ function App() {
           }));
           setResults(shaped);
           setSurgeonSummary(
-            `Fallback recommendation (Claude API unavailable): ${shaped.map((p) => p.procedure).join(', ')} based on joint and diagnosis keywords.`
+            `Fallback recommendation (AI summary unavailable): ${shaped.map((p) => p.procedure).join(', ')} based on joint and diagnosis keywords.`
           );
           setPatientSummary(
             `Your top recommended procedure is ${shaped[0].procedure} using ${shaped[0].product}. Recovery is approximately ${shaped[0].recovery_weeks} weeks. Ask your surgeon for details.`
@@ -123,7 +123,7 @@ function App() {
         setPatientSummary(result.patientSummary);
       } catch (apiErr) {
         clearInterval(messageInterval);
-        // Claude API failed — use local scoring fallback before giving up
+        // AI summary failed — use local scoring fallback before giving up
         const fallbackMatches = scoreAndRankProcedures(activeProfile, PROCEDURES_CATALOG);
         if (fallbackMatches.length > 0) {
           const shaped = fallbackMatches.map((p, idx) => ({
@@ -143,7 +143,7 @@ function App() {
           }));
           setResults(shaped);
           setSurgeonSummary(
-            `⚠️ Claude API was partially unavailable. Fallback summary text is shown.\n\nRecommended: ${shaped.map((p) => p.procedure).join(', ')}.`
+            `⚠️ AI summary was unavailable. Fallback summary text is shown.\n\nRecommended: ${shaped.map((p) => p.procedure).join(', ')}.`
           );
           setPatientSummary(
             `Your top recommended procedure is ${shaped[0].procedure} using ${shaped[0].product}. Recovery is approximately ${shaped[0].recovery_weeks} weeks. Speak with your surgeon for a full clinical assessment.`

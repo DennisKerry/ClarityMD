@@ -2,7 +2,7 @@ flask
 flask-cors
 flask-sqlalchemy
 scikit-learn
-anthropic
+groq
 requests
 beautifulsoup4
 python-dotenv

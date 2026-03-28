@@ -1,6 +1,7 @@
 import os
+from pathlib import Path
 
-import anthropic
+from groq import Groq
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from flask_cors import CORS
@@ -10,7 +11,7 @@ from ml_engine import score_procedures
 from models import Procedure, db
 
 
-load_dotenv()
+load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 app = Flask(__name__)
 CORS(app, origins=["https://clarity-md.vercel.app", "http://localhost:3000"])
@@ -61,22 +62,22 @@ def recommend():
             }
         )
 
-    # Step 3: Claude generates summaries from top results.
+    # Step 3: Groq generates summaries from top results.
     top3 = ranked[:3]
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    api_key = os.getenv("GROQ_API_KEY")
 
     if not api_key:
         return jsonify(
             {
                 "procedures": ranked,
-                "surgeonSummary": "ANTHROPIC_API_KEY not configured on backend. ML ranking shown without AI summary.",
+                "surgeonSummary": "GROQ_API_KEY not configured on backend. ML ranking shown without AI summary.",
                 "patientSummary": "AI patient summary is unavailable right now, but ranked procedure options are shown.",
                 "total_matched": len(ranked),
                 "db_size": Procedure.query.count(),
             }
         )
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = Groq(api_key=api_key)
 
     surgeon_prompt = f"""You are a clinical decision support assistant for orthopedic surgeons.
 A patient presents with the following profile:
@@ -110,24 +111,24 @@ Write warmly covering:
 Friendly tone, 6th grade reading level, under 200 words."""
 
     try:
-        surgeon_msg = client.messages.create(
-            model="claude-sonnet-4-20250514",
+        surgeon_msg = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             max_tokens=1000,
             messages=[{"role": "user", "content": surgeon_prompt}],
         )
 
-        patient_msg = client.messages.create(
-            model="claude-sonnet-4-20250514",
+        patient_msg = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             max_tokens=800,
             messages=[{"role": "user", "content": patient_prompt}],
         )
 
-        surgeon_summary = surgeon_msg.content[0].text
-        patient_summary = patient_msg.content[0].text
+        surgeon_summary = surgeon_msg.choices[0].message.content
+        patient_summary = patient_msg.choices[0].message.content
     except Exception as exc:
-        # Keep API useful even when Claude billing/service is unavailable.
+        # Keep API useful even when Groq service is unavailable.
         surgeon_summary = (
-            "AI summary unavailable due to Anthropic error. "
+            "AI summary unavailable due to Groq error. "
             f"Using ML-ranked recommendations only. ({str(exc)})"
         )
         patient_summary = "AI explanation is temporarily unavailable. Showing ranked procedure options instead."

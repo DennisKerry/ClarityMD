@@ -3,7 +3,7 @@
 ## 🚀 5-Minute Frontend Setup
 
 ### Step 1: Get Your API Key
-1. Go to https://console.anthropic.com
+1. Go to https://console.groq.com
 2. Sign up or log in
 3. Create an API key
 4. Copy the key (starts with `sk-ant-`)

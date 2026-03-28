@@ -33,7 +33,7 @@ ClarityMD/
 ### Prerequisites
 - Node.js 14+ (for frontend)
 - Python 3.8+ (for backend)
-- Anthropic API key (https://console.anthropic.com)
+- Groq API key (https://console.groq.com) — free tier available
 
 ### Frontend Setup
 
@@ -48,9 +48,9 @@ ClarityMD/
    cp .env.example .env
    ```
    
-3. **Add your Anthropic API key to `.env`**
+3. **Set backend URL in `.env`** (optional — defaults to localhost:5000)
    ```
-   REACT_APP_ANTHROPIC_KEY=sk-ant-...
+   REACT_APP_BACKEND_URL=http://localhost:5000
    ```
 
 4. **Start development server**
@@ -103,7 +103,7 @@ Algorithm (`src/utils/recommend.js`):
 - Returns **top 3** procedures above 0.2 threshold
 
 ### 3. AI-Generated Summaries
-Two Claude API calls in parallel:
+Two Groq (Llama 3.3 70B) API calls:
 - **Surgeon Brief**: Clinical tone, rationale, technique, contraindications
 - **Patient Summary**: Plain language, what/why/how/recovery (under 200 words)
 
@@ -141,10 +141,11 @@ Each includes: ID, procedure name, joint, keywords, product, category, technique
 
 ## API Configuration
 
-### Claude API
-- **Endpoint**: https://api.anthropic.com/v1/messages
-- **Model**: claude-sonnet-4-20250514
-- **Headers**: x-api-key, anthropic-version (2023-06-01), anthropic-dangerous-direct-browser-access
+### Groq API
+- **Endpoint**: https://api.groq.com/openai/v1/chat/completions
+- **Model**: llama-3.3-70b-versatile (free tier)
+- **Key**: Set `GROQ_API_KEY` in `backend/.env`
+- Get a free key at https://console.groq.com
 
 ## Demo Patient
 Load with "Load Demo Patient" button:
@@ -163,11 +164,11 @@ Activity: High, Prior: Physical therapy 3 months
 
 ## Troubleshooting
 
-**REACT_APP_ANTHROPIC_KEY not set**: Create `.env` file in frontend/ with your API key
+**GROQ_API_KEY not set**: Create/edit `backend/.env` and add your Groq key
 
 **Blank page**: Check browser console, ensure port 3000 available
 
-**Claude summaries as placeholders**: Verify API key is valid
+**AI summaries show as placeholders**: Verify `GROQ_API_KEY` is valid in `backend/.env`
 
 **Procedures not loading**: Check `src/data/procedures.json` exists and is valid JSON
 
