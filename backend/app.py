@@ -1,83 +1,149 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import json
 import os
 
-BASE_DIR = os.path.dirname(__file__)
-DATA_PATH = os.path.join(BASE_DIR, "data", "procedures.json")
+import anthropic
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+from flask_cors import CORS
+from sqlalchemy import or_
+
+from ml_engine import score_procedures
+from models import Procedure, db
+
+
+load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["https://clarity-md.vercel.app", "http://localhost:3000"])
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///claritymd.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-def load_procedures():
-    with open(DATA_PATH, 'r', encoding='utf-8') as f:
-        return json.load(f)
+db.init_app(app)
 
-def score_procedure(profile, proc):
-    # Simple heuristic scoring: keyword matches + joint match + activity level
-    score = 0
-    text = (profile.get('diagnosis','') + ' ' + profile.get('prior_treatments','')).lower()
-    # keyword matches
-    for kw in proc.get('diagnosis_keywords', []):
-        if kw.lower() in text:
-            score += 2
-    # joint match
-    if profile.get('joint','').lower() == proc.get('joint','').lower():
-        score += 3
-    # activity level approximate match
-    if profile.get('activity_level','').lower() == proc.get('activity_level','').lower():
-        score += 1
-    # age range check
-    age = profile.get('age')
-    try:
-        if age is not None:
-            parts = proc.get('age_range','').split('-')
-            if len(parts) == 2:
-                low = int(parts[0])
-                high = int(parts[1])
-                if low <= int(age) <= high:
-                    score += 1
-    except Exception:
-        pass
-    return score
 
-@app.route('/recommend', methods=['POST'])
+@app.route("/health", methods=["GET"])
+def health():
+    count = Procedure.query.count()
+    return jsonify({"status": "ok", "procedures_in_db": count})
+
+
+@app.route("/recommend", methods=["POST"])
 def recommend():
     profile = request.json or {}
-    procedures = load_procedures()
-    scored = []
-    for p in procedures:
-        s = score_procedure(profile, p)
-        scored.append((s, p))
-    scored.sort(key=lambda x: x[0], reverse=True)
-    # normalize confidences
-    max_score = max([s for s,_ in scored]) if scored else 1
-    results = []
-    for s,p in scored[:5]:
-        conf = round((s / max_score) * 100, 1) if max_score > 0 else 0.0
-        results.append({
-            'procedure': p['procedure'],
-            'joint': p['joint'],
-            'arthrex_product': p['arthrex_product'],
-            'technique_notes': p['technique_notes'],
-            'contraindications': p.get('contraindications', []),
-            'confidence': conf
-        })
-    # take top 1-3 for surgeon view
-    surgeon_view = results[:3]
-    # simple patient view: plain-language summary generated locally for MVP
-    patient_view = []
-    for r in surgeon_view:
-        text = (
-            f"The recommended procedure is {r['procedure']} on the {r['joint']}. "
-            f"This uses {r['arthrex_product']}. Expected recovery varies; generally follows surgeon guidance."
+
+    # Validate required fields
+    required = ["age", "sex", "joint", "diagnosis", "activity", "pain_types", "prior_treatments"]
+    missing = [field for field in required if profile.get(field) in (None, "", [])]
+    if missing:
+        return jsonify({"error": f"Missing fields: {missing}"}), 400
+
+    # Step 1: Get relevant procedures from DB, then widen if sparse.
+    procedures = Procedure.query.filter(
+        or_(
+            Procedure.joint.ilike(f"%{profile['joint']}%"),
+            Procedure.body_area.ilike(f"%{profile['joint']}%"),
         )
-        patient_view.append({'procedure': r['procedure'], 'summary': text, 'confidence': r['confidence']})
+    ).all()
 
-    return jsonify({
-        'surgeon_recommendations': surgeon_view,
-        'patient_summaries': patient_view
-    })
+    if len(procedures) < 5:
+        procedures = Procedure.query.all()
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # Step 2: ML scoring
+    ranked = score_procedures(profile, procedures)
+
+    if not ranked:
+        return jsonify(
+            {
+                "procedures": [],
+                "surgeonSummary": "No procedures matched this profile.",
+                "patientSummary": "Please consult your surgeon directly.",
+                "total_matched": 0,
+                "db_size": Procedure.query.count(),
+            }
+        )
+
+    # Step 3: Claude generates summaries from top results.
+    top3 = ranked[:3]
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+
+    if not api_key:
+        return jsonify(
+            {
+                "procedures": ranked,
+                "surgeonSummary": "ANTHROPIC_API_KEY not configured on backend. ML ranking shown without AI summary.",
+                "patientSummary": "AI patient summary is unavailable right now, but ranked procedure options are shown.",
+                "total_matched": len(ranked),
+                "db_size": Procedure.query.count(),
+            }
+        )
+
+    client = anthropic.Anthropic(api_key=api_key)
+
+    surgeon_prompt = f"""You are a clinical decision support assistant for orthopedic surgeons.
+A patient presents with the following profile:
+- Age: {profile['age']}yo {profile['sex']}
+- Affected area: {profile['joint']}
+- Pain types: {', '.join(profile['pain_types'])}
+- Diagnosis: {profile['diagnosis']}
+- Activity level: {profile['activity']}
+- Prior treatments: {profile['prior_treatments']}
+
+ML-ranked top Arthrex procedures:
+{top3}
+
+Write a concise clinical brief:
+1. Primary Recommendation & Rationale
+2. Arthrex Product & Technique Notes
+3. Implant Sizing Considerations
+4. Contraindication Flags
+Tone: clinical, precise. Under 300 words."""
+
+    patient_prompt = f"""Explain this recommendation to a patient with no medical background.
+Procedure: {top3[0]['procedure']}
+Product: {top3[0]['product']}
+Recovery: {top3[0]['recovery_weeks']} weeks
+
+Write warmly covering:
+1. What is this procedure?
+2. Why is it right for you?
+3. What happens during the procedure?
+4. What does recovery look like?
+Friendly tone, 6th grade reading level, under 200 words."""
+
+    try:
+        surgeon_msg = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=1000,
+            messages=[{"role": "user", "content": surgeon_prompt}],
+        )
+
+        patient_msg = client.messages.create(
+            model="claude-sonnet-4-20250514",
+            max_tokens=800,
+            messages=[{"role": "user", "content": patient_prompt}],
+        )
+
+        surgeon_summary = surgeon_msg.content[0].text
+        patient_summary = patient_msg.content[0].text
+    except Exception as exc:
+        # Keep API useful even when Claude billing/service is unavailable.
+        surgeon_summary = (
+            "AI summary unavailable due to Anthropic error. "
+            f"Using ML-ranked recommendations only. ({str(exc)})"
+        )
+        patient_summary = "AI explanation is temporarily unavailable. Showing ranked procedure options instead."
+
+    return jsonify(
+        {
+            "procedures": ranked,
+            "surgeonSummary": surgeon_summary,
+            "patientSummary": patient_summary,
+            "total_matched": len(ranked),
+            "db_size": Procedure.query.count(),
+        }
+    )
+
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, port=5000)
