@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PatientForm from './components/PatientForm';
 import SurgeonPanel from './components/SurgeonPanel';
 import PatientPanel from './components/PatientPanel';
