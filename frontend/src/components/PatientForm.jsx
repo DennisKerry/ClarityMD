@@ -13,11 +13,13 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
   };
 
   const [formData, setFormData] = useState(profile);
+  const [selectedRegion, setSelectedRegion] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
   const [attemptedSubmit, setAttemptedSubmit] = useState(false);
 
   useEffect(() => {
     setFormData(profile);
+    setSelectedRegion(profile.joint ? profile.joint : '');
     setFieldErrors({});
     setAttemptedSubmit(false);
   }, [profile]);
@@ -28,7 +30,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
     const errors = {};
     requiredFields.forEach((field) => {
       if (!String(data[field] || '').trim()) {
-        errors[field] = 'This field is required.';
+        errors[field] = field === 'joint' ? 'Please select a body region' : 'This field is required.';
       }
     });
     return errors;
@@ -49,6 +51,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
 
   const handleLoadDemo = () => {
     setFormData(demoPatient);
+    setSelectedRegion('Knee (Left)');
     onProfileChange(demoPatient);
     setFieldErrors({});
     setAttemptedSubmit(false);
@@ -185,21 +188,24 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
       <h2 style={styles.title}>Patient Intake</h2>
       <form style={styles.form} onSubmit={handleSubmit}>
         <div style={styles.jointSection}>
-          <label style={styles.label}>Joint / Area (click 3D model)</label>
-          <div style={styles.helperText}>Placeholder: Click a highlighted joint hotspot to select.</div>
+          <label style={styles.label}>Joint / Area</label>
+          <div style={styles.helperText}>
+            Click an anatomical region below to select the affected area.
+          </div>
           <BodySelector
-            selectedJoint={formData.joint}
-            onJointSelect={(joint) => {
+            selectedRegion={selectedRegion}
+            onRegionSelect={(joint, region) => {
               const nextData = { ...formData, joint };
               setFormData(nextData);
+              setSelectedRegion(region || '');
               onProfileChange(nextData);
               if (attemptedSubmit) {
                 setFieldErrors(validate(nextData));
               }
             }}
           />
-          {formData.joint && (
-            <div style={styles.selectedBadge}>Selected area: {formData.joint}</div>
+          {selectedRegion && (
+            <div style={styles.selectedBadge}>Selected area: {selectedRegion}</div>
           )}
           {fieldErrors.joint && <div style={styles.errorText}>{fieldErrors.joint}</div>}
         </div>

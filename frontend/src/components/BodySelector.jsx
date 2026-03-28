@@ -1,162 +1,232 @@
-import React, { useMemo, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text } from '@react-three/drei';
+import React, { useState } from 'react';
 
-const SKIN_COLOR = '#e8d5c4';
-const DEFAULT_JOINT_COLOR = '#e7ebf0';
-const HOVER_COLOR = '#0066CC';
-const SELECTED_COLOR = '#003087';
-
-const JOINT_HOTSPOTS = [
-  { joint: 'Knee', side: 'left', position: [-0.3, -1.2, 0] },
-  { joint: 'Knee', side: 'right', position: [0.3, -1.2, 0] },
-  { joint: 'Shoulder', side: 'left', position: [-0.6, 0.6, 0] },
-  { joint: 'Shoulder', side: 'right', position: [0.6, 0.6, 0] },
-  { joint: 'Hip', side: 'left', position: [-0.3, -0.3, 0] },
-  { joint: 'Hip', side: 'right', position: [0.3, -0.3, 0] },
-  { joint: 'Ankle', side: 'left', position: [-0.3, -2.1, 0] },
-  { joint: 'Ankle', side: 'right', position: [0.3, -2.1, 0] },
-  { joint: 'Elbow', side: 'left', position: [-0.9, 0.1, 0] },
-  { joint: 'Elbow', side: 'right', position: [0.9, 0.1, 0] },
+const REGIONS = [
+  {
+    name: 'Shoulder (Left)',
+    joint: 'Shoulder',
+    shape: { type: 'ellipse', cx: 98, cy: 140, rx: 16, ry: 13 },
+    label: { x: 52, y: 132, anchor: 'end' },
+    leader: { x1: 56, y1: 132, x2: 82, y2: 138 },
+  },
+  {
+    name: 'Shoulder (Right)',
+    joint: 'Shoulder',
+    shape: { type: 'ellipse', cx: 202, cy: 140, rx: 16, ry: 13 },
+    label: { x: 248, y: 132, anchor: 'start' },
+    leader: { x1: 244, y1: 132, x2: 218, y2: 138 },
+  },
+  {
+    name: 'Elbow (Left)',
+    joint: 'Elbow',
+    shape: { type: 'ellipse', cx: 70, cy: 240, rx: 13, ry: 11 },
+    label: { x: 40, y: 230, anchor: 'end' },
+    leader: { x1: 44, y1: 230, x2: 58, y2: 236 },
+  },
+  {
+    name: 'Elbow (Right)',
+    joint: 'Elbow',
+    shape: { type: 'ellipse', cx: 230, cy: 240, rx: 13, ry: 11 },
+    label: { x: 260, y: 230, anchor: 'start' },
+    leader: { x1: 256, y1: 230, x2: 242, y2: 236 },
+  },
+  {
+    name: 'Wrist (Left)',
+    joint: 'Wrist',
+    shape: { type: 'ellipse', cx: 58, cy: 328, rx: 11, ry: 9 },
+    label: { x: 34, y: 324, anchor: 'end' },
+    leader: { x1: 38, y1: 324, x2: 48, y2: 326 },
+  },
+  {
+    name: 'Wrist (Right)',
+    joint: 'Wrist',
+    shape: { type: 'ellipse', cx: 242, cy: 328, rx: 11, ry: 9 },
+    label: { x: 266, y: 324, anchor: 'start' },
+    leader: { x1: 262, y1: 324, x2: 252, y2: 326 },
+  },
+  {
+    name: 'Hip (Left)',
+    joint: 'Hip',
+    shape: { type: 'ellipse', cx: 125, cy: 315, rx: 14, ry: 12 },
+    label: { x: 90, y: 308, anchor: 'end' },
+    leader: { x1: 94, y1: 308, x2: 112, y2: 312 },
+  },
+  {
+    name: 'Hip (Right)',
+    joint: 'Hip',
+    shape: { type: 'ellipse', cx: 175, cy: 315, rx: 14, ry: 12 },
+    label: { x: 210, y: 308, anchor: 'start' },
+    leader: { x1: 206, y1: 308, x2: 188, y2: 312 },
+  },
+  {
+    name: 'Knee (Left)',
+    joint: 'Knee',
+    shape: { type: 'ellipse', cx: 126, cy: 415, rx: 13, ry: 11 },
+    label: { x: 92, y: 410, anchor: 'end' },
+    leader: { x1: 96, y1: 410, x2: 112, y2: 414 },
+  },
+  {
+    name: 'Knee (Right)',
+    joint: 'Knee',
+    shape: { type: 'ellipse', cx: 174, cy: 415, rx: 13, ry: 11 },
+    label: { x: 208, y: 410, anchor: 'start' },
+    leader: { x1: 204, y1: 410, x2: 188, y2: 414 },
+  },
+  {
+    name: 'Ankle (Left)',
+    joint: 'Ankle',
+    shape: { type: 'ellipse', cx: 128, cy: 525, rx: 11, ry: 9 },
+    label: { x: 94, y: 522, anchor: 'end' },
+    leader: { x1: 98, y1: 522, x2: 116, y2: 524 },
+  },
+  {
+    name: 'Ankle (Right)',
+    joint: 'Ankle',
+    shape: { type: 'ellipse', cx: 172, cy: 525, rx: 11, ry: 9 },
+    label: { x: 206, y: 522, anchor: 'start' },
+    leader: { x1: 202, y1: 522, x2: 184, y2: 524 },
+  },
+  {
+    name: 'Spine / Back',
+    joint: 'Spine',
+    shape: { type: 'rect', x: 144, y: 180, width: 12, height: 170, rx: 6, ry: 6 },
+    label: { x: 212, y: 214, anchor: 'start' },
+    leader: { x1: 208, y1: 214, x2: 156, y2: 226 },
+  },
+  {
+    name: 'Neck',
+    joint: 'Neck',
+    shape: { type: 'ellipse', cx: 150, cy: 95, rx: 10, ry: 8 },
+    label: { x: 212, y: 92, anchor: 'start' },
+    leader: { x1: 208, y1: 92, x2: 160, y2: 96 },
+  },
 ];
 
-function JointHotspot({ hotspot, selectedJoint, onJointSelect }) {
-  const [isHovered, setIsHovered] = useState(false);
-  const isSelected = selectedJoint === hotspot.joint;
+function RegionShape({ region, isSelected, isHovered, onClick, onHover }) {
+  const fill = isSelected ? '#003087' : isHovered ? '#E8EFF8' : 'transparent';
+  const stroke = isSelected ? '#003087' : isHovered ? '#0066CC' : 'none';
+  const strokeWidth = isSelected ? 2 : isHovered ? 1.5 : 0;
+  const opacity = isSelected ? 0.85 : isHovered ? 0.7 : 1;
 
-  const color = isSelected ? SELECTED_COLOR : isHovered ? HOVER_COLOR : DEFAULT_JOINT_COLOR;
-  const emissiveIntensity = isSelected ? 1.0 : isHovered ? 0.6 : 0.2;
-  const opacity = isSelected ? 1 : 0.65;
-  const scale = isSelected ? 1.3 : 1;
+  const commonProps = {
+    fill,
+    stroke,
+    strokeWidth,
+    opacity,
+    style: { cursor: 'pointer', transition: 'fill 0.15s ease, stroke 0.15s ease' },
+    onMouseEnter: () => onHover(region.name),
+    onMouseLeave: () => onHover(''),
+    onClick: () => onClick(region),
+  };
 
-  return (
-    <group>
-      <mesh
-        position={hotspot.position}
-        scale={[scale, scale, scale]}
-        onPointerOver={(event) => {
-          event.stopPropagation();
-          setIsHovered(true);
-        }}
-        onPointerOut={(event) => {
-          event.stopPropagation();
-          setIsHovered(false);
-        }}
-        onClick={(event) => {
-          event.stopPropagation();
-          onJointSelect(hotspot.joint);
-        }}
-      >
-        <sphereGeometry args={[0.1, 24, 24]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={emissiveIntensity}
-          transparent
-          opacity={opacity}
-          roughness={0.35}
-          metalness={0.05}
-        />
-      </mesh>
-      <Text
-        position={[
-          hotspot.position[0] + (hotspot.side === 'left' ? -0.18 : 0.18),
-          hotspot.position[1] + 0.12,
-          hotspot.position[2] + 0.02,
-        ]}
-        fontSize={0.09}
-        color={isSelected ? '#ffffff' : '#2C3E50'}
-        anchorX={hotspot.side === 'left' ? 'right' : 'left'}
-        anchorY="middle"
-        fontWeight={isSelected ? 'bold' : 'normal'}
-      >
-        {hotspot.joint}
-      </Text>
-    </group>
-  );
+  if (region.shape.type === 'rect') {
+    return <rect {...commonProps} {...region.shape} />;
+  }
+
+  return <ellipse {...commonProps} {...region.shape} />;
 }
 
-function AnatomicalBody({ selectedJoint, onJointSelect }) {
-  const hotspots = useMemo(() => JOINT_HOTSPOTS, []);
+export default function BodySelector({ selectedRegion, onRegionSelect }) {
+  const [hoveredRegion, setHoveredRegion] = useState('');
+
+  const handleRegionClick = (region) => {
+    if (selectedRegion === region.name) {
+      onRegionSelect('', '');
+      return;
+    }
+
+    onRegionSelect(region.joint, region.name);
+  };
 
   return (
-    <group>
-      <mesh position={[0, 1.1, 0]}>
-        <sphereGeometry args={[0.3, 32, 32]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.7} />
-      </mesh>
-
-      <mesh position={[0, 0.3, 0]}>
-        <boxGeometry args={[0.8, 1.0, 0.3]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.75} />
-      </mesh>
-
-      <mesh position={[-0.75, 0.55, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.11, 0.11, 0.55, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-      <mesh position={[0.75, 0.55, 0]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[0.11, 0.11, 0.55, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-
-      <mesh position={[-0.95, -0.25, 0]}>
-        <cylinderGeometry args={[0.09, 0.09, 0.8, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-      <mesh position={[0.95, -0.25, 0]}>
-        <cylinderGeometry args={[0.09, 0.09, 0.8, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-
-      <mesh position={[-0.3, -0.75, 0]}>
-        <cylinderGeometry args={[0.12, 0.12, 0.95, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-      <mesh position={[0.3, -0.75, 0]}>
-        <cylinderGeometry args={[0.12, 0.12, 0.95, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-
-      <mesh position={[-0.3, -1.65, 0]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.9, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-      <mesh position={[0.3, -1.65, 0]}>
-        <cylinderGeometry args={[0.1, 0.1, 0.9, 20]} />
-        <meshStandardMaterial color={SKIN_COLOR} roughness={0.72} />
-      </mesh>
-
-      {hotspots.map((hotspot) => (
-        <JointHotspot
-          key={`${hotspot.joint}-${hotspot.side}`}
-          hotspot={hotspot}
-          selectedJoint={selectedJoint}
-          onJointSelect={onJointSelect}
-        />
-      ))}
-    </group>
-  );
-}
-
-export default function BodySelector({ selectedJoint, onJointSelect }) {
-  return (
-    <div style={{ width: '100%', height: '420px' }}>
-      <Canvas
-        camera={{ position: [0, 0, 5], fov: 45 }}
-        style={{ background: 'transparent' }}
-        onCreated={({ gl, events }) => {
-          events.connect(gl.domElement);
-          gl.domElement.style.touchAction = 'pan-y';
+    <div
+      style={{
+        backgroundColor: 'white',
+        border: '1px solid #E0E6ED',
+        borderRadius: '12px',
+        padding: '16px',
+      }}
+    >
+      <div
+        style={{
+          color: '#003087',
+          fontSize: '14px',
+          fontWeight: 600,
+          marginBottom: '8px',
         }}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[2, 4, 2]} intensity={1} />
+        Select Affected Area
+      </div>
 
-        <AnatomicalBody selectedJoint={selectedJoint} onJointSelect={onJointSelect} />
+      <svg viewBox="0 0 300 600" style={{ width: '100%', maxWidth: '280px', display: 'block', margin: '0 auto' }}>
+        <g>
+          <circle cx="150" cy="56" r="28" fill="#f0ebe3" stroke="#c9b99a" strokeWidth="1.6" />
+          <rect x="140" y="84" width="20" height="24" rx="8" fill="#f0ebe3" stroke="#c9b99a" strokeWidth="1.6" />
+          <path
+            d="M100 112 Q83 162 96 236 Q108 304 122 338 L178 338 Q192 304 204 236 Q217 162 200 112 Z"
+            fill="#f0ebe3"
+            stroke="#c9b99a"
+            strokeWidth="1.6"
+          />
+          <path d="M100 128 Q68 182 68 252 Q68 300 58 342" fill="none" stroke="#c9b99a" strokeWidth="18" strokeLinecap="round" />
+          <path d="M200 128 Q232 182 232 252 Q232 300 242 342" fill="none" stroke="#c9b99a" strokeWidth="18" strokeLinecap="round" />
+          <path d="M124 338 L124 540" fill="none" stroke="#c9b99a" strokeWidth="24" strokeLinecap="round" />
+          <path d="M176 338 L176 540" fill="none" stroke="#c9b99a" strokeWidth="24" strokeLinecap="round" />
+        </g>
 
-        <OrbitControls makeDefault enableRotate enableZoom={false} enablePan={false} />
-      </Canvas>
+        {REGIONS.map((region) => {
+          const isSelected = selectedRegion === region.name;
+          const isHovered = hoveredRegion === region.name;
+
+          return (
+            <g key={region.name}>
+              <RegionShape
+                region={region}
+                isSelected={isSelected}
+                isHovered={isHovered}
+                onClick={handleRegionClick}
+                onHover={setHoveredRegion}
+              />
+              <line
+                x1={region.leader.x1}
+                y1={region.leader.y1}
+                x2={region.leader.x2}
+                y2={region.leader.y2}
+                stroke={isSelected ? '#003087' : '#8F96A3'}
+                strokeWidth="1"
+              />
+              <text
+                x={region.label.x}
+                y={region.label.y}
+                textAnchor={region.label.anchor}
+                fontSize="9"
+                fill={isSelected ? '#003087' : '#444'}
+                fontFamily="sans-serif"
+                fontWeight={isSelected ? '700' : '400'}
+                dominantBaseline="middle"
+              >
+                {region.name}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+
+      {selectedRegion ? (
+        <div
+          style={{
+            marginTop: '12px',
+            display: 'inline-block',
+            backgroundColor: '#003087',
+            color: '#FFFFFF',
+            borderRadius: '20px',
+            padding: '6px 16px',
+            fontSize: '13px',
+            fontWeight: 600,
+          }}
+        >
+          Selected: {selectedRegion}
+        </div>
+      ) : null}
     </div>
   );
 }
