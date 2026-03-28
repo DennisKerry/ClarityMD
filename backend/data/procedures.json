@@ -1,0 +1,192 @@
+[
+  {
+    "procedure": "ACL Reconstruction",
+    "joint": "Knee",
+    "diagnosis_keywords": ["ligament tear", "acl tear", "instability"],
+    "arthrex_product": "TightRope RT",
+    "technique_notes": "Cortical fixation, arthroscopic technique",
+    "age_range": "15-45",
+    "activity_level": "High",
+    "contraindications": ["active infection"]
+  },
+  {
+    "procedure": "Rotator Cuff Repair",
+    "joint": "Shoulder",
+    "diagnosis_keywords": ["rotator cuff tear", "shoulder pain", "weakness"],
+    "arthrex_product": "SwiveLock Anchors",
+    "technique_notes": "Suture anchor fixation, subacromial decompression as needed",
+    "age_range": "30-75",
+    "activity_level": "Medium",
+    "contraindications": ["advanced glenohumeral arthritis"]
+  },
+  {
+    "procedure": "Meniscus Repair",
+    "joint": "Knee",
+    "diagnosis_keywords": ["meniscal tear", "locking", "catching"],
+    "arthrex_product": "Meniscal Repair System",
+    "technique_notes": "Inside-out or all-inside repair depending on tear",
+    "age_range": "15-60",
+    "activity_level": "Medium",
+    "contraindications": ["degenerative tear in elderly"]
+  },
+  {
+    "procedure": "Total Shoulder Arthroplasty",
+    "joint": "Shoulder",
+    "diagnosis_keywords": ["severe arthritis", "glenohumeral arthritis", "loss of motion"],
+    "arthrex_product": "Anatomic Shoulder System",
+    "technique_notes": "Stemmed implant, consideration of reverse arthroplasty if cuff deficient",
+    "age_range": "55-85",
+    "activity_level": "Low",
+    "contraindications": ["active infection"]
+  },
+  {
+    "procedure": "Bankart Repair",
+    "joint": "Shoulder",
+    "diagnosis_keywords": ["shoulder instability", "dislocation", "bankart lesion"],
+    "arthrex_product": "Suture Anchors",
+    "technique_notes": "Arthroscopic repair of labral tear",
+    "age_range": "15-50",
+    "activity_level": "High",
+    "contraindications": ["glenoid bone loss >25%"]
+  },
+  {
+    "procedure": "Microfracture",
+    "joint": "Knee",
+    "diagnosis_keywords": ["focal chondral defect", "cartilage lesion"],
+    "arthrex_product": "Microfracture awl",
+    "technique_notes": "Create marrow stimulation holes for fibrocartilage",
+    "age_range": "15-50",
+    "activity_level": "Medium",
+    "contraindications": ["diffuse arthritis"]
+  },
+  {
+    "procedure": "Labral Repair (Hip)",
+    "joint": "Hip",
+    "diagnosis_keywords": ["labral tear", "hip pain", "femoroacetabular impingement"],
+    "arthrex_product": "Hip Arthroscopy Anchors",
+    "technique_notes": "Arthroscopic labral repair and rim trimming",
+    "age_range": "16-50",
+    "activity_level": "High",
+    "contraindications": ["advanced osteoarthritis"]
+  },
+  {
+    "procedure": "Distal Radius ORIF",
+    "joint": "Wrist",
+    "diagnosis_keywords": ["distal radius fracture", "wrist fracture"],
+    "arthrex_product": "Plating System",
+    "technique_notes": "Volarly locked plating",
+    "age_range": "18-85",
+    "activity_level": "Variable",
+    "contraindications": ["severe soft tissue loss"]
+  },
+  {
+    "procedure": "Carpal Tunnel Release",
+    "joint": "Wrist",
+    "diagnosis_keywords": ["carpal tunnel", "median neuropathy", "numbness"],
+    "arthrex_product": "CTR Instruments",
+    "technique_notes": "Open or endoscopic release",
+    "age_range": "25-80",
+    "activity_level": "Low",
+    "contraindications": []
+  },
+  {
+    "procedure": "UCL Reconstruction (Tommy John)",
+    "joint": "Elbow",
+    "diagnosis_keywords": ["ucl tear", "valgus instability", "throwing athlete"],
+    "arthrex_product": "UCL Fixation",
+    "technique_notes": "Palmaris tendon graft, docking technique",
+    "age_range": "15-45",
+    "activity_level": "High",
+    "contraindications": ["infection"]
+  },
+  {
+    "procedure": "ACL Revision",
+    "joint": "Knee",
+    "diagnosis_keywords": ["acl graft failure", "instability after acl"],
+    "arthrex_product": "Revision Fixation",
+    "technique_notes": "Assess tunnel placement, possible staged grafting",
+    "age_range": "15-50",
+    "activity_level": "High",
+    "contraindications": []
+  },
+  {
+    "procedure": "PCL Reconstruction",
+    "joint": "Knee",
+    "diagnosis_keywords": ["pcl injury", "posterior instability"],
+    "arthrex_product": "PCL Fixation",
+    "technique_notes": "Graft fixation to restore posterior stability",
+    "age_range": "18-60",
+    "activity_level": "Medium",
+    "contraindications": []
+  },
+  {
+    "procedure": "Shoulder Arthroscopy for Impingement",
+    "joint": "Shoulder",
+    "diagnosis_keywords": ["subacromial impingement", "shoulder pain"],
+    "arthrex_product": "Shaver & Burr",
+    "technique_notes": "Subacromial decompression and bursectomy",
+    "age_range": "25-70",
+    "activity_level": "Medium",
+    "contraindications": ["rotator cuff arthropathy"]
+  },
+  {
+    "procedure": "Hip Arthroscopy for FAI",
+    "joint": "Hip",
+    "diagnosis_keywords": ["fai", "cam lesion", "pincer"],
+    "arthrex_product": "Hip Scope Kit",
+    "technique_notes": "Cam/pincer resection and labral management",
+    "age_range": "16-50",
+    "activity_level": "High",
+    "contraindications": ["advanced degenerative changes"]
+  },
+  {
+    "procedure": "Ankle Arthroscopy",
+    "joint": "Ankle",
+    "diagnosis_keywords": ["ankle instability", "osteochondral lesion"],
+    "arthrex_product": "Ankle Instruments",
+    "technique_notes": "Arthroscopic debridement or fixation",
+    "age_range": "16-65",
+    "activity_level": "Medium",
+    "contraindications": []
+  },
+  {
+    "procedure": "Distal Biceps Repair",
+    "joint": "Elbow",
+    "diagnosis_keywords": ["biceps rupture", "elbow pain", "weakness"],
+    "arthrex_product": "Biceps Fixation",
+    "technique_notes": "Single incision with cortical button",
+    "age_range": "30-65",
+    "activity_level": "Medium",
+    "contraindications": ["poor soft tissue"]
+  },
+  {
+    "procedure": "Hand Tendon Repair",
+    "joint": "Hand",
+    "diagnosis_keywords": ["tendon laceration", "loss of flexion"],
+    "arthrex_product": "Tendon Repair Kit",
+    "technique_notes": "Core suture technique with epitendinous repair",
+    "age_range": "5-80",
+    "activity_level": "Variable",
+    "contraindications": []
+  },
+  {
+    "procedure": "Trigger Finger Release",
+    "joint": "Hand",
+    "diagnosis_keywords": ["trigger finger", "locking finger"],
+    "arthrex_product": "Release Instruments",
+    "technique_notes": "A1 pulley release",
+    "age_range": "30-80",
+    "activity_level": "Low",
+    "contraindications": []
+  },
+  {
+    "procedure": "Labral Repair (Shoulder)",
+    "joint": "Shoulder",
+    "diagnosis_keywords": ["labral tear", "shoulder pain", "instability"],
+    "arthrex_product": "Labral Anchors",
+    "technique_notes": "Arthroscopic labral repair",
+    "age_range": "16-60",
+    "activity_level": "High",
+    "contraindications": []
+  }
+]
