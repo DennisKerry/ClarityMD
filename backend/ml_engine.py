@@ -2,6 +2,12 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
 
+CONFIDENCE_THRESHOLDS = {
+    "strong": 0.75,
+    "good": 0.45,
+}
+
+
 def build_query(profile):
     """Convert patient profile into a rich query string."""
     pain_map = {
@@ -44,6 +50,13 @@ def score_procedures(profile, procedures):
 
     corpus = [p.full_text or "" for p in procedures]
     query = build_query(profile)
+    profile_context = " ".join(
+        [
+            str(profile.get("diagnosis", "")).lower(),
+            str(profile.get("prior_treatments", "")).lower(),
+            " ".join([str(p).lower() for p in profile.get("pain_types", [])]),
+        ]
+    )
 
     vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words="english", max_features=5000)
 
@@ -61,23 +74,38 @@ def score_procedures(profile, procedures):
 
         # Bonus scoring on top of TF-IDF
         bonus = 0.0
+        reasons = []
 
         # Joint exact match bonus
-        if procedure.joint and procedure.joint.lower() == str(profile.get("joint", "")).lower():
+        joint_match = (
+            procedure.joint
+            and procedure.joint.lower() == str(profile.get("joint", "")).lower()
+        )
+        is_multi = procedure.joint and procedure.joint.lower() == "multiple"
+        if joint_match:
             bonus += 0.20
+            reasons.append(f"{procedure.joint} procedure")
+        elif is_multi:
+            reasons.append("Applicable to multiple joints")
 
         # Age range bonus
+        age_in_range = False
         try:
             profile_age = int(profile.get("age"))
             if procedure.age_min <= profile_age <= procedure.age_max:
                 bonus += 0.08
+                age_in_range = True
         except (TypeError, ValueError):
             pass
 
         # Activity match bonus
-        if procedure.activity_level and profile.get("activity"):
-            if procedure.activity_level.lower() == str(profile.get("activity", "")).lower():
-                bonus += 0.07
+        activity_match = (
+            procedure.activity_level
+            and profile.get("activity")
+            and procedure.activity_level.lower() == str(profile.get("activity", "")).lower()
+        )
+        if activity_match:
+            bonus += 0.07
 
         # Pain type overlap bonus
         proc_pain = (
@@ -91,7 +119,26 @@ def score_procedures(profile, procedures):
 
         final_score = min(base_score + bonus, 1.0)
 
-        if final_score > 0.05:  # minimum threshold
+        # Build meaningful match reasons
+        if base_score > 0.03:
+            reasons.append(f"Keyword relevance {round(base_score * 100)}%")
+        if age_in_range:
+            reasons.append(f"Age-appropriate ({procedure.age_min}\u2013{procedure.age_max})")
+        if activity_match:
+            reasons.append(f"Activity match ({procedure.activity_level})")
+        matched_pain = proc_pain & profile_pain
+        if matched_pain:
+            reasons.append(f"Pain type: {', '.join(matched_pain)}")
+        if not reasons:
+            reasons.append("General orthopedic option")
+
+        contraindication_flags = []
+        if procedure.contraindications:
+            for contra in [c.strip() for c in procedure.contraindications.split(",") if c.strip()]:
+                if contra.lower() in profile_context:
+                    contraindication_flags.append(contra)
+
+        if final_score > 0.12:  # raised threshold — only show genuinely relevant results
             results.append(
                 {
                     "procedure": procedure.procedure,
@@ -103,20 +150,18 @@ def score_procedures(profile, procedures):
                     "contraindications": procedure.contraindications.split(",")
                     if procedure.contraindications
                     else [],
+                    "contraindication_flags": contraindication_flags,
                     "arthrex_url": procedure.arthrex_url,
                     "relevance_score": round(final_score, 3),
                     "confidence_label": (
                         "Strong Match"
-                        if final_score >= 0.75
+                        if final_score >= CONFIDENCE_THRESHOLDS["strong"]
                         else "Good Match"
-                        if final_score >= 0.45
+                        if final_score >= CONFIDENCE_THRESHOLDS["good"]
                         else "Possible Match"
                     ),
-                    "pain_types_matched": list(proc_pain & profile_pain),
-                    "match_reasons": [
-                        f"Matched {procedure.joint} pathology context",
-                        f"TF-IDF relevance score {round(base_score, 3)}",
-                    ],
+                    "pain_types_matched": list(matched_pain),
+                    "match_reasons": reasons,
                     "technique_notes": procedure.technique,
                 }
             )
