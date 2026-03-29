@@ -389,6 +389,79 @@ export default function AnatomyPanel({ procedures }) {
 
   const diagram = joint ? JOINT_DIAGRAMS[joint] : null;
 
+  const topProc = procedures?.[0];
+
+  return (
+    <div className="card anat-panel">
+      <div className="anat-header">
+        <div className="anat-title">
+          <div className="anat-title-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          </div>
+          Anatomy
+        </div>
+        <div className="anat-subtitle">Affected region &amp; procedure target</div>
+      </div>
+
+      {topProc && (
+        <div className="anat-proc-chip">{topProc.procedure}</div>
+      )}
+
+      <div className="anat-tabs">
+        <button className={`anat-tab${activeTab === 'diagram' ? ' active' : ''}`} onClick={() => setActiveTab('diagram')}>
+          Joint Detail
+        </button>
+        <button className={`anat-tab${activeTab === 'body' ? ' active' : ''}`} onClick={() => setActiveTab('body')}>
+          Body Overview
+        </button>
+      </div>
+
+      {!joint ? (
+        <div className="anat-no-joint">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="4" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="4" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="20" y2="12"/></svg>
+          <span>Anatomy diagram will appear after procedure recommendation</span>
+        </div>
+      ) : activeTab === 'diagram' ? (
+        <div className="anat-diagram-row">
+          <div className="anat-body-col">
+            <div className={pulse ? 'anat-pulse-ring' : ''}>
+              <BodySilhouette joint={joint} />
+            </div>
+            <div className="anat-body-label">{joint}</div>
+          </div>
+
+          <div className="anat-zoom-col">
+            <div className="anat-zoom-label">{diagram?.label || joint}</div>
+            {diagram ? (
+              <svg viewBox={diagram.viewBox} style={{ width: '100%', maxWidth: '160px', display: 'block' }}>
+                {diagram.render(null)}
+              </svg>
+            ) : (
+              <div className="anat-no-diagram">Diagram not available</div>
+            )}
+            <div className="anat-legend-row">
+              <div className="anat-legend-item"><div className="anat-legend-dot" style={{ background: '#e8ddd0' }} />Bone</div>
+              <div className="anat-legend-item"><div className="anat-legend-dot" style={{ background: '#b8d4e8' }} />Cartilage</div>
+              <div className="anat-legend-item"><div className="anat-legend-dot" style={{ background: '#003087' }} />Key structure</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="anat-body-overview">
+          <BodySilhouette joint={joint} />
+          <div className="anat-body-overview-label">
+            Highlighted area indicates the <strong>{joint}</strong> region targeted by the top procedure
+          </div>
+        </div>
+      )}
+
+      {topProc?.recovery_weeks && (
+        <div className="anat-recovery-note">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Expected recovery for <strong>{topProc.procedure}</strong>: ~{topProc.recovery_weeks} weeks</span>
+        </div>
+      )}
+    </div>
   const styles = {
     container: {
       padding: '24px',

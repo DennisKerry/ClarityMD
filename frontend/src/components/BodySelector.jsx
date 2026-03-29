@@ -143,18 +143,23 @@ export default function BodySelector({ selectedRegion, onRegionSelect }) {
 
       <svg viewBox="-30 0 360 600" style={{ width: '100%', maxWidth: '300px', display: 'block', margin: '0 auto' }}>
         <g>
-          <circle cx="150" cy="56" r="28" fill="#DCE8F8" stroke="#6B9EC8" strokeWidth="1.6" />
-          <rect x="140" y="84" width="20" height="24" rx="8" fill="#DCE8F8" stroke="#6B9EC8" strokeWidth="1.6" />
-          <path
-            d="M100 112 Q83 162 96 236 Q108 304 122 338 L178 338 Q192 304 204 236 Q217 162 200 112 Z"
-            fill="#DCE8F8"
-            stroke="#6B9EC8"
-            strokeWidth="1.6"
-          />
-          <path d="M100 128 Q68 182 68 252 Q68 300 58 342" fill="none" stroke="#6B9EC8" strokeWidth="18" strokeLinecap="round" />
-          <path d="M200 128 Q232 182 232 252 Q232 300 242 342" fill="none" stroke="#6B9EC8" strokeWidth="18" strokeLinecap="round" />
-          <path d="M124 338 L124 540" fill="none" stroke="#6B9EC8" strokeWidth="24" strokeLinecap="round" />
-          <path d="M176 338 L176 540" fill="none" stroke="#6B9EC8" strokeWidth="24" strokeLinecap="round" />
+          {/* Legs — drawn first so torso renders on top */}
+          <path d="M 114 338 C 112 398 111 458 113 534 L 133 534 C 135 458 134 398 132 340 Z"
+            fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.4"/>
+          <path d="M 186 338 C 188 398 189 458 187 534 L 167 534 C 165 458 166 398 168 340 Z"
+            fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.4"/>
+          {/* Arms */}
+          <path d="M 97 127 C 81 154 68 198 63 242 C 59 278 56 308 54 328 L 68 333 C 69 312 72 282 76 246 C 81 203 92 160 113 131 Z"
+            fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.4"/>
+          <path d="M 203 127 C 219 154 232 198 237 242 C 241 278 244 308 246 328 L 232 333 C 231 312 228 282 224 246 C 219 203 208 160 187 131 Z"
+            fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.4"/>
+          {/* Torso + pelvis */}
+          <path d="M 104 108 Q 90 158 92 232 Q 93 298 112 338 L 188 338 Q 207 298 208 232 Q 210 158 196 108 Q 174 100 150 98 Q 126 100 104 108 Z"
+            fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.5"/>
+          {/* Neck */}
+          <rect x="142" y="78" width="16" height="24" rx="5" fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.5"/>
+          {/* Head */}
+          <circle cx="150" cy="54" r="27" fill="#C4D5EB" stroke="#5788BD" strokeWidth="1.5"/>
         </g>
 
         {REGIONS.map((region) => {
