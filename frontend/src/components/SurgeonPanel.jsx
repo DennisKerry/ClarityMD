@@ -202,6 +202,22 @@ export default function SurgeonPanel({ procedures, summary }) {
       gap: '8px',
       marginBottom: '12px',
     },
+    contraindicationHeader: {
+      width: '100%',
+      fontSize: '12px',
+      fontWeight: '700',
+      color: '#2C3E50',
+      marginBottom: '4px',
+    },
+    flaggedContraindication: {
+      padding: '6px 10px',
+      backgroundColor: '#FDEDEC',
+      border: '1px solid #E74C3C',
+      color: '#7B241C',
+      borderRadius: '4px',
+      fontSize: '11px',
+      fontWeight: '700',
+    },
     contraindication: {
       padding: '6px 10px',
       backgroundColor: '#F8D7DA',
@@ -286,6 +302,8 @@ export default function SurgeonPanel({ procedures, summary }) {
         {procedures.map((proc, idx) => {
           const confColor = getConfidenceColor(proc.confidence_label);
           const scorePercent = (proc.relevance_score || 0) * 100;
+          const flags = proc.contraindication_flags || [];
+          const contraindications = proc.contraindications || [];
 
           return (
             <div key={idx} style={styles.rankCard}>
@@ -362,10 +380,20 @@ export default function SurgeonPanel({ procedures, summary }) {
                     ~{proc.recovery_weeks || '12-16'} weeks recovery
                   </span>
 
-                  {proc.contraindications && proc.contraindications.length > 0 && (
+                  {(flags.length > 0 || contraindications.length > 0) && (
                     <div style={styles.contraIndicationsRow}>
-                      {proc.contraindications.map((contra, cidx) => (
-                        <div key={cidx} style={styles.contraindication}>
+                      {flags.length > 0 && <div style={styles.contraindicationHeader}>Profile risk flags</div>}
+                      {flags.map((flag, cidx) => (
+                        <div key={`flag-${cidx}`} style={styles.flaggedContraindication}>
+                          ⚠️ {flag}
+                        </div>
+                      ))}
+
+                      {contraindications.length > 0 && (
+                        <div style={styles.contraindicationHeader}>General contraindications</div>
+                      )}
+                      {contraindications.map((contra, cidx) => (
+                        <div key={`contra-${cidx}`} style={styles.contraindication}>
                           ⚠️ {contra}
                         </div>
                       ))}

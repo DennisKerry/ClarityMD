@@ -4,8 +4,6 @@ import SurgeonPanel from './components/SurgeonPanel';
 import PatientPanel from './components/PatientPanel';
 import LoadingSpinner from './components/LoadingSpinner';
 import { generateClarityMD } from './utils/claude';
-import { scoreAndRankProcedures } from './utils/recommend';
-import PROCEDURES_CATALOG from './data/procedures.json';
 
 const INITIAL_PROFILE = {
   age: '',
@@ -62,57 +60,27 @@ function App() {
       }, 2000);
 
       try {
-        // Generate both procedures and summaries via Claude
+        // Backend returns ML-ranked procedures plus AI summaries.
         const result = await generateClarityMD(activeProfile);
 
         clearInterval(messageInterval);
 
-        if (result.error) {
+        if (result.error || !Array.isArray(result.procedures)) {
           setResults(null);
           setSurgeonSummary(null);
           setPatientSummary(null);
-          setError(result.error);
+          setError(result.error || 'No recommendation payload was returned.');
           setLoading(false);
           return;
         }
 
         if (!result.procedures || result.procedures.length === 0) {
-          // Claude returned empty — fall back to local scoring engine
-          const fallbackMatches = scoreAndRankProcedures(activeProfile, PROCEDURES_CATALOG);
-          if (fallbackMatches.length === 0) {
-            setResults(null);
-            setSurgeonSummary(null);
-            setPatientSummary(null);
-            setError(
-              'No matching Arthrex procedures found for this profile. ' +
-              'Try refining the diagnosis or affected area. ' +
-              'For cervical/spine complaints without neurological signs, conservative management is typically first-line.'
-            );
-            setLoading(false);
-            return;
-          }
-          // Shape fallback results to match the Claude response schema
-          const shaped = fallbackMatches.map((p, idx) => ({
-            rank: idx + 1,
-            procedure: p.procedure,
-            product: p.product,
-            product_url: p.product_url || '',
-            product_category: p.product_category,
-            relevance_score: p.score,
-            match_reasons: ['Matched by diagnosis keywords and joint area'],
-            technique_notes: p.technique,
-            recovery_weeks: p.recovery_weeks,
-            contraindications: p.contraindications || [],
-            arthrex_url: p.product_url || 'https://www.arthrex.com',
-            confidence_label:
-              p.score >= 0.85 ? 'Strong Match' : p.score >= 0.6 ? 'Good Match' : 'Possible Match',
-          }));
-          setResults(shaped);
-          setSurgeonSummary(
-            `Fallback recommendation (AI summary unavailable): ${shaped.map((p) => p.procedure).join(', ')} based on joint and diagnosis keywords.`
-          );
-          setPatientSummary(
-            `Your top recommended procedure is ${shaped[0].procedure} using ${shaped[0].product}. Recovery is approximately ${shaped[0].recovery_weeks} weeks. Ask your surgeon for details.`
+          setResults(null);
+          setSurgeonSummary(null);
+          setPatientSummary(null);
+          setError(
+            'No matching Arthrex procedures found for this profile. ' +
+            'Try refining the diagnosis or affected area.'
           );
           setLoading(false);
           return;
@@ -123,34 +91,6 @@ function App() {
         setPatientSummary(result.patientSummary);
       } catch (apiErr) {
         clearInterval(messageInterval);
-        // AI summary failed — use local scoring fallback before giving up
-        const fallbackMatches = scoreAndRankProcedures(activeProfile, PROCEDURES_CATALOG);
-        if (fallbackMatches.length > 0) {
-          const shaped = fallbackMatches.map((p, idx) => ({
-            rank: idx + 1,
-            procedure: p.procedure,
-            product: p.product,
-            product_url: p.product_url || '',
-            product_category: p.product_category,
-            relevance_score: p.score,
-            match_reasons: ['Matched by diagnosis keywords and joint area'],
-            technique_notes: p.technique,
-            recovery_weeks: p.recovery_weeks,
-            contraindications: p.contraindications || [],
-            arthrex_url: p.product_url || 'https://www.arthrex.com',
-            confidence_label:
-              p.score >= 0.85 ? 'Strong Match' : p.score >= 0.6 ? 'Good Match' : 'Possible Match',
-          }));
-          setResults(shaped);
-          setSurgeonSummary(
-            `⚠️ AI summary was unavailable. Fallback summary text is shown.\n\nRecommended: ${shaped.map((p) => p.procedure).join(', ')}.`
-          );
-          setPatientSummary(
-            `Your top recommended procedure is ${shaped[0].procedure} using ${shaped[0].product}. Recovery is approximately ${shaped[0].recovery_weeks} weeks. Speak with your surgeon for a full clinical assessment.`
-          );
-          setLoading(false);
-          return;
-        }
         throw apiErr;
       }
     } catch (err) {
