@@ -462,5 +462,231 @@ export default function AnatomyPanel({ procedures }) {
         </div>
       )}
     </div>
+  const styles = {
+    container: {
+      padding: '24px',
+      backgroundColor: 'white',
+      borderRadius: '10px',
+      border: '1px solid #E0E6ED',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '16px',
+    },
+    title: {
+      fontSize: '18px',
+      fontWeight: '600',
+      color: '#003087',
+      marginBottom: '4px',
+    },
+    subtitle: {
+      fontSize: '12px',
+      color: '#5A6B7A',
+    },
+    tabs: {
+      display: 'flex',
+      gap: '8px',
+      borderBottom: '2px solid #E0E6ED',
+      paddingBottom: '0',
+    },
+    tab: (active) => ({
+      padding: '8px 16px',
+      fontSize: '13px',
+      fontWeight: active ? '700' : '500',
+      color: active ? '#003087' : '#5A6B7A',
+      border: 'none',
+      background: 'none',
+      cursor: 'pointer',
+      borderBottom: active ? '2px solid #003087' : '2px solid transparent',
+      marginBottom: '-2px',
+      transition: 'all 0.15s',
+    }),
+    diagramRow: {
+      display: 'flex',
+      gap: '20px',
+      alignItems: 'flex-start',
+    },
+    bodyColumn: {
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '8px',
+      minWidth: '130px',
+    },
+    bodyLabel: {
+      fontSize: '10px',
+      color: '#5A6B7A',
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    zoomColumn: {
+      flex: 1,
+      backgroundColor: '#F9FAFB',
+      borderRadius: '8px',
+      border: '1px solid #E0E6ED',
+      padding: '12px',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: '8px',
+    },
+    zoomLabel: {
+      fontSize: '11px',
+      fontWeight: '600',
+      color: '#003087',
+      textAlign: 'center',
+    },
+    noJoint: {
+      textAlign: 'center',
+      color: '#5A6B7A',
+      fontSize: '13px',
+      padding: '32px 16px',
+      backgroundColor: '#F9FAFB',
+      borderRadius: '8px',
+      border: '1px dashed #E0E6ED',
+    },
+    procedureChip: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '4px 10px',
+      backgroundColor: '#EEF4FF',
+      color: '#003087',
+      borderRadius: '20px',
+      fontSize: '11px',
+      fontWeight: '600',
+    },
+    legendRow: {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '8px',
+      marginTop: '4px',
+    },
+    legendItem: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: '10px',
+      color: '#5A6B7A',
+    },
+    legendDot: (color) => ({
+      width: '8px',
+      height: '8px',
+      borderRadius: '50%',
+      backgroundColor: color,
+      flexShrink: 0,
+    }),
+    pulseRing: {
+      animation: pulse ? 'clarityPulse 1.2s ease-out 3' : 'none',
+    },
+  };
+
+  const topProc = procedures?.[0];
+
+  return (
+    <>
+      <style>{`
+        @keyframes clarityPulse {
+          0%   { opacity: 1; transform: scale(1); }
+          50%  { opacity: 0.4; transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+
+      <div style={styles.container}>
+        <div>
+          <div style={styles.title}>🫀 Anatomy Diagram</div>
+          <div style={styles.subtitle}>Affected region & procedure target area</div>
+        </div>
+
+        {topProc && (
+          <div style={styles.procedureChip}>
+            <span>🎯</span>
+            <span>{topProc.procedure}</span>
+          </div>
+        )}
+
+        <div style={styles.tabs}>
+          <button style={styles.tab(activeTab === 'diagram')} onClick={() => setActiveTab('diagram')}>
+            Joint Detail
+          </button>
+          <button style={styles.tab(activeTab === 'body')} onClick={() => setActiveTab('body')}>
+            Body Overview
+          </button>
+        </div>
+
+        {!joint ? (
+          <div style={styles.noJoint}>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🦴</div>
+            <div>Anatomy diagram will appear here after procedure recommendation</div>
+          </div>
+        ) : activeTab === 'diagram' ? (
+          <div style={styles.diagramRow}>
+            {/* Mini body with glow */}
+            <div style={styles.bodyColumn}>
+              <div style={{ ...styles.pulseRing }}>
+                <BodySilhouette joint={joint} />
+              </div>
+              <div style={styles.bodyLabel}>{joint} region</div>
+            </div>
+
+            {/* Zoomed joint */}
+            <div style={styles.zoomColumn}>
+              <div style={styles.zoomLabel}>
+                {diagram?.label || joint} — Zoomed View
+              </div>
+              {diagram ? (
+                <svg
+                  viewBox={diagram.viewBox}
+                  style={{ width: '100%', maxWidth: '180px', display: 'block' }}
+                >
+                  {diagram.render(null)}
+                </svg>
+              ) : (
+                <div style={{ fontSize: '12px', color: '#5A6B7A', textAlign: 'center', padding: '16px' }}>
+                  Diagram not available for this joint
+                </div>
+              )}
+              <div style={styles.legendRow}>
+                <div style={styles.legendItem}>
+                  <div style={styles.legendDot('#e8ddd0')} /> Bone
+                </div>
+                <div style={styles.legendItem}>
+                  <div style={styles.legendDot('#b8d4e8')} /> Soft tissue
+                </div>
+                <div style={styles.legendItem}>
+                  <div style={styles.legendDot('#003087')} /> Key structure
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Body overview tab */
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <BodySilhouette joint={joint} />
+            <div style={{ fontSize: '12px', color: '#5A6B7A', textAlign: 'center' }}>
+              Highlighted area indicates the <strong style={{ color: '#003087' }}>{joint}</strong> region targeted by the top procedure
+            </div>
+          </div>
+        )}
+
+        {/* Recovery note */}
+        {topProc?.recovery_weeks && (
+          <div style={{
+            backgroundColor: '#F0F7FF',
+            border: '1px solid #C8DFF5',
+            borderRadius: '8px',
+            padding: '10px 14px',
+            fontSize: '12px',
+            color: '#003087',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+          }}>
+            <span>📅</span>
+            <span>Expected recovery for <strong>{topProc.procedure}</strong>: ~{topProc.recovery_weeks} weeks</span>
+          </div>
+        )}
+      </div>
+    </>
   );
 }
