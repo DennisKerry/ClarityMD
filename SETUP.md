@@ -51,9 +51,10 @@ REACT_APP_BACKEND_URL=http://localhost:5000
 ## Demo Flow
 
 1. Open http://localhost:3000
-2. Click `Load Demo Patient` or complete all required fields
-3. Click `Analyze Patient`
-4. Review ranked procedures, confidence labels, contraindications, and summaries
+2. Select a joint on the body diagram or choose from the joint dropdown
+3. Click `Load Demo` to autofill a sample profile, or complete all required fields manually
+4. Click `Analyze Patient`
+5. Review ranked procedures, confidence labels, contraindications, and AI summaries in the Surgeon and Patient panels
 
 ## Troubleshooting
 
