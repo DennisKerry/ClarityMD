@@ -28,11 +28,16 @@ export async function generateClarityMD(profile) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  }).catch(() => {
+    throw new Error(
+      'Cannot connect to the backend server. ' +
+      'Make sure Flask is running: cd backend && python app.py'
+    );
   });
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}));
-    throw new Error(err.error || 'Backend error');
+    throw new Error(err.error || `Server error ${response.status}`);
   }
 
   return await response.json();

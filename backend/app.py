@@ -17,7 +17,13 @@ load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 DATA_PATH = Path(__file__).parent / "data" / "procedures.json"
 
 app = Flask(__name__)
-CORS(app, origins=["https://clarity-md.vercel.app", "http://localhost:3000"])
+CORS(app, origins=[
+    "https://clarity-md.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+])
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///claritymd.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -72,15 +78,21 @@ def _build_full_text(record):
 
 
 def _seed_database_if_empty():
-    if Procedure.query.count() > 0:
-        return
     if not DATA_PATH.exists():
         return
 
     with DATA_PATH.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
+    # Skip if DB already has all records from the JSON
+    if Procedure.query.count() >= len(data):
+        return
+
+    existing_ids = {p.id for p in Procedure.query.with_entities(Procedure.id).all()}
+
     for idx, item in enumerate(data):
+        if int(item.get("id", idx + 1)) in existing_ids:
+            continue
         age_range = item.get("age_range") or [14, 80]
         try:
             age_min = int(age_range[0])
@@ -132,16 +144,40 @@ def recommend():
     if profile.get("pain_types") in (None, "", []):
         profile["pain_types"] = _infer_pain_types(profile.get("diagnosis", ""))
 
-    # Step 1: Get relevant procedures from DB, then widen if sparse.
-    procedures = Procedure.query.filter(
+    # Step 1: Get joint-specific procedures + always include multi-joint entries (e.g. PRP).
+    joint_procs = Procedure.query.filter(
         or_(
             Procedure.joint.ilike(f"%{profile['joint']}%"),
             Procedure.body_area.ilike(f"%{profile['joint']}%"),
         )
     ).all()
+    multi_procs = Procedure.query.filter(
+        Procedure.joint.ilike("%Multiple%")
+    ).all()
 
-    if len(procedures) < 5:
-        procedures = Procedure.query.all()
+    # Merge, deduplicate
+    seen_ids: set = set()
+    procedures = []
+    for p in joint_procs + multi_procs:
+        if p.id not in seen_ids:
+            seen_ids.add(p.id)
+            procedures.append(p)
+
+    if not procedures:
+        known = "Knee, Shoulder, Hip, Elbow, Wrist, Ankle, Neck, Spine"
+        return jsonify({
+            "procedures": [],
+            "surgeonSummary": (
+                f"No Arthrex procedures found for '{profile['joint']}'. "
+                f"This catalog currently covers: {known}."
+            ),
+            "patientSummary": (
+                "We don't have procedures cataloged for this body area yet. "
+                "Please consult your surgeon directly."
+            ),
+            "total_matched": 0,
+            "db_size": Procedure.query.count(),
+        })
 
     # Step 2: ML scoring
     ranked = score_procedures(profile, procedures)

@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
 import BodySelector from './BodySelector';
 
-export default function PatientForm({ profile, onProfileChange, onSubmit, isLoading }) {
-  const demoPatient = {
-    age: '34',
-    sex: 'Male',
-    joint: 'Knee',
-    diagnosis: 'ACL tear with significant instability following sports injury, failed conservative management',
-    activity: 'High',
-    prior_treatments:
-      'Physical therapy for 3 months, no meaningful improvement, MRI confirmed complete ACL rupture',
-  };
+const ACTIVITY_OPTIONS = ['High', 'Medium', 'Low', 'Sedentary'];
 
+const DEMO_PATIENT = {
+  age: '34',
+  sex: 'Male',
+  joint: 'Knee',
+  diagnosis:
+    'ACL tear with significant instability following sports injury, failed conservative management',
+  activity: 'High',
+  prior_treatments:
+    'Physical therapy for 3 months, no meaningful improvement, MRI confirmed complete ACL rupture',
+};
+
+export default function PatientForm({ profile, onProfileChange, onSubmit, isLoading, onStartOver }) {
   const [formData, setFormData] = useState(profile);
   const [selectedRegion, setSelectedRegion] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -19,49 +22,40 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
 
   useEffect(() => {
     setFormData(profile);
-    setSelectedRegion(profile.joint ? profile.joint : '');
+    setSelectedRegion(profile.joint || '');
     setFieldErrors({});
     setAttemptedSubmit(false);
   }, [profile]);
 
-  const requiredFields = ['age', 'sex', 'joint', 'diagnosis', 'activity', 'prior_treatments'];
+  const REQUIRED = ['age', 'sex', 'joint', 'diagnosis', 'activity', 'prior_treatments'];
 
   const validate = (data) => {
     const errors = {};
-    requiredFields.forEach((field) => {
-      if (!String(data[field] || '').trim()) {
-        errors[field] = field === 'joint' ? 'Please select or enter a body region' : 'This field is required.';
+    REQUIRED.forEach((f) => {
+      if (!String(data[f] || '').trim()) {
+        errors[f] = f === 'joint' ? 'Select or type a body region' : 'Required';
       }
     });
     return errors;
   };
 
-  const isFormComplete = requiredFields.every((field) => String(formData[field] || '').trim());
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    const nextData = { ...formData, [name]: value };
-    setFormData(nextData);
-    if (name === 'joint') {
-      setSelectedRegion(value);
-    }
-    onProfileChange(nextData);
-
-    if (attemptedSubmit) {
-      setFieldErrors(validate(nextData));
-    }
+  const update = (key, value) => {
+    const next = { ...formData, [key]: value };
+    setFormData(next);
+    if (key === 'joint') setSelectedRegion(value);
+    onProfileChange(next);
+    if (attemptedSubmit) setFieldErrors(validate(next));
   };
 
-  const handleLoadDemo = () => {
-    setFormData(demoPatient);
-    setSelectedRegion('Knee (Left)');
-    onProfileChange(demoPatient);
+  const handleChange = (e) => update(e.target.name, e.target.value);
+
+  const handleDemo = () => {
+    setFormData(DEMO_PATIENT);
+    setSelectedRegion('Knee');
+    onProfileChange(DEMO_PATIENT);
     setFieldErrors({});
     setAttemptedSubmit(false);
-
-    window.setTimeout(() => {
-      onSubmit(demoPatient);
-    }, 100);
+    window.setTimeout(() => onSubmit(DEMO_PATIENT), 100);
   };
 
   const handleSubmit = (e) => {
@@ -69,265 +63,171 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
     setAttemptedSubmit(true);
     const errors = validate(formData);
     setFieldErrors(errors);
-
-    if (Object.keys(errors).length > 0) {
-      return;
-    }
-
-    onSubmit(formData);
-  };
-
-  const styles = {
-    container: {
-      flex: 1,
-      padding: '24px',
-      backgroundColor: '#F4F6F9',
-      borderRadius: '10px',
-      border: '1px solid #E0E6ED',
-    },
-    title: {
-      fontSize: '24px',
-      fontWeight: '600',
-      marginBottom: '24px',
-      color: '#003087',
-    },
-    form: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px',
-    },
-    formGroup: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px',
-    },
-    label: {
-      fontSize: '14px',
-      fontWeight: '500',
-      color: '#2C3E50',
-    },
-    jointSection: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px',
-      marginBottom: '4px',
-    },
-    selectedBadge: {
-      display: 'inline-block',
-      alignSelf: 'flex-start',
-      padding: '6px 12px',
-      borderRadius: '999px',
-      backgroundColor: '#EAF2FF',
-      border: '1px solid #003087',
-      color: '#003087',
-      fontSize: '12px',
-      fontWeight: '700',
-      letterSpacing: '0.2px',
-    },
-    helperText: {
-      fontSize: '12px',
-      color: '#5A6B7A',
-      marginTop: '-4px',
-    },
-    input: {
-      padding: '10px 12px',
-      fontSize: '14px',
-      border: '1px solid #D1D9E6',
-      borderRadius: '6px',
-      fontFamily: 'inherit',
-    },
-    textarea: {
-      padding: '10px 12px',
-      fontSize: '14px',
-      border: '1px solid #D1D9E6',
-      borderRadius: '6px',
-      fontFamily: 'inherit',
-      minHeight: '80px',
-      resize: 'vertical',
-    },
-    errorText: {
-      color: '#B42318',
-      fontSize: '12px',
-      marginTop: '2px',
-    },
-    buttonGroup: {
-      display: 'flex',
-      gap: '12px',
-      marginTop: '12px',
-    },
-    button: {
-      flex: 1,
-      padding: '12px 16px',
-      fontSize: '14px',
-      fontWeight: '600',
-      borderRadius: '6px',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-    },
-    submitBtn: {
-      backgroundColor: '#003087',
-      color: 'white',
-      border: 'none',
-    },
-    submitBtnHover: {
-      backgroundColor: '#001f52',
-    },
-    submitBtnDisabled: {
-      backgroundColor: '#B0B8C8',
-      cursor: 'not-allowed',
-    },
-    demoBtn: {
-      backgroundColor: 'transparent',
-      color: '#0066CC',
-      border: '2px solid #0066CC',
-    },
-    demoBtnHover: {
-      backgroundColor: '#EAF2FF',
-    },
+    if (Object.keys(errors).length === 0) onSubmit(formData);
   };
 
   return (
-    <div style={styles.container}>
-      <h2 style={styles.title}>Patient Intake</h2>
-      <form style={styles.form} onSubmit={handleSubmit}>
-        <div style={styles.jointSection}>
-          <label style={styles.label}>Joint / Area</label>
-          <div style={styles.helperText}>
-            Click an anatomical region below or type the affected area manually.
-          </div>
-          <BodySelector
-            selectedRegion={selectedRegion}
-            onRegionSelect={(joint, region) => {
-              const nextData = { ...formData, joint };
-              setFormData(nextData);
-              setSelectedRegion(region || joint || '');
-              onProfileChange(nextData);
-              if (attemptedSubmit) {
-                setFieldErrors(validate(nextData));
-              }
-            }}
-          />
-          {selectedRegion && (
-            <div style={styles.selectedBadge}>Selected area: {selectedRegion}</div>
-          )}
-          <input
-            style={styles.input}
-            type="text"
-            name="joint"
-            value={formData.joint}
-            onChange={handleInputChange}
-            placeholder="Or type area manually (e.g., Knee, Shoulder, Spine)"
-          />
-          {fieldErrors.joint && <div style={styles.errorText}>{fieldErrors.joint}</div>}
+    <div className="card">
+      <div className="card-header">
+        <div className="card-title">
+          <div className="card-icon">📋</div>
+          Patient Intake
         </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Age</label>
-          <input
-            style={styles.input}
-            type="number"
-            name="age"
-            value={formData.age}
-            onChange={handleInputChange}
-            placeholder="e.g., 34"
-          />
-          {fieldErrors.age && <div style={styles.errorText}>{fieldErrors.age}</div>}
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Sex</label>
-          <input
-            style={styles.input}
-            type="text"
-            name="sex"
-            value={formData.sex}
-            onChange={handleInputChange}
-            placeholder="e.g., Male"
-          />
-          {fieldErrors.sex && <div style={styles.errorText}>{fieldErrors.sex}</div>}
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Diagnosis / Symptoms</label>
-          <textarea
-            style={styles.textarea}
-            name="diagnosis"
-            value={formData.diagnosis}
-            onChange={handleInputChange}
-            placeholder="Describe the patient's condition..."
-          />
-          {fieldErrors.diagnosis && <div style={styles.errorText}>{fieldErrors.diagnosis}</div>}
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Activity Level</label>
-          <input
-            style={styles.input}
-            type="text"
-            name="activity"
-            value={formData.activity}
-            onChange={handleInputChange}
-            placeholder="e.g., High, Medium, Low"
-          />
-          {fieldErrors.activity && <div style={styles.errorText}>{fieldErrors.activity}</div>}
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Prior Treatments</label>
-          <textarea
-            style={styles.textarea}
-            name="prior_treatments"
-            value={formData.prior_treatments}
-            onChange={handleInputChange}
-            placeholder="Any previous treatments or interventions..."
-          />
-          {fieldErrors.prior_treatments && (
-            <div style={styles.errorText}>{fieldErrors.prior_treatments}</div>
-          )}
-        </div>
-
-        <div style={styles.buttonGroup}>
-          <button
-            style={{
-              ...styles.button,
-              ...styles.submitBtn,
-              ...(isLoading ? styles.submitBtnDisabled : {}),
-            }}
-            type="submit"
-            disabled={isLoading}
-            onMouseEnter={(e) => {
-              if (!isLoading) e.target.style.backgroundColor = '#001f52';
-            }}
-            onMouseLeave={(e) => {
-              if (!isLoading) e.target.style.backgroundColor = '#003087';
-            }}
-          >
-            {isLoading ? 'Analyzing...' : 'Analyze Patient'}
+        {onStartOver && (
+          <button className="btn btn-ghost btn-sm no-print" type="button" onClick={onStartOver}>
+            ↻ New Patient
           </button>
-          <button
-            style={{
-              ...styles.button,
-              ...styles.demoBtn,
-            }}
-            type="button"
-            onClick={handleLoadDemo}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#EAF2FF';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = 'transparent';
-            }}
-          >
-            Load Demo Patient
-          </button>
-        </div>
-
-        {!isFormComplete && (
-          <div style={styles.helperText}>
-            Fill all required fields to run analysis.
-          </div>
         )}
-      </form>
+      </div>
+
+      <div className="card-body">
+        <form className="form-stack" onSubmit={handleSubmit} noValidate>
+
+          {/* ── Affected Area ── */}
+          <div className="form-field">
+            <label className="form-label">Affected Area</label>
+            <BodySelector
+              selectedRegion={selectedRegion}
+              onRegionSelect={(joint, region) => {
+                const next = { ...formData, joint };
+                setFormData(next);
+                setSelectedRegion(region || joint || '');
+                onProfileChange(next);
+                if (attemptedSubmit) setFieldErrors(validate(next));
+              }}
+            />
+            {selectedRegion && (
+              <div className="region-badge" style={{ alignSelf: 'flex-start', marginTop: '6px' }}>
+                ✓ {selectedRegion}
+              </div>
+            )}
+            <input
+              className={`form-input${fieldErrors.joint ? ' has-error' : ''}`}
+              type="text"
+              name="joint"
+              value={formData.joint}
+              onChange={handleChange}
+              placeholder="Or type manually (e.g., Knee, Shoulder, Spine)"
+            />
+            {fieldErrors.joint && (
+              <div className="form-error">⚠ {fieldErrors.joint}</div>
+            )}
+          </div>
+
+          {/* ── Age + Sex ── */}
+          <div className="form-row-2">
+            <div className="form-field">
+              <label className="form-label">Age</label>
+              <input
+                className={`form-input${fieldErrors.age ? ' has-error' : ''}`}
+                type="number"
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+                placeholder="e.g., 34"
+                min="1"
+                max="120"
+              />
+              {fieldErrors.age && <div className="form-error">⚠ {fieldErrors.age}</div>}
+            </div>
+            <div className="form-field">
+              <label className="form-label">Sex</label>
+              <input
+                className={`form-input${fieldErrors.sex ? ' has-error' : ''}`}
+                type="text"
+                name="sex"
+                value={formData.sex}
+                onChange={handleChange}
+                placeholder="Male / Female"
+              />
+              {fieldErrors.sex && <div className="form-error">⚠ {fieldErrors.sex}</div>}
+            </div>
+          </div>
+
+          {/* ── Diagnosis ── */}
+          <div className="form-field">
+            <label className="form-label">Diagnosis / Symptoms</label>
+            <textarea
+              className={`form-textarea${fieldErrors.diagnosis ? ' has-error' : ''}`}
+              name="diagnosis"
+              value={formData.diagnosis}
+              onChange={handleChange}
+              placeholder="Chief complaint, severity, relevant history..."
+              rows={3}
+            />
+            {fieldErrors.diagnosis && (
+              <div className="form-error">⚠ {fieldErrors.diagnosis}</div>
+            )}
+          </div>
+
+          {/* ── Activity Level (pill toggle) ── */}
+          <div className="form-field">
+            <label className="form-label">Activity Level</label>
+            <div className="pill-group">
+              {ACTIVITY_OPTIONS.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`pill-opt${formData.activity === opt ? ' active' : ''}`}
+                  onClick={() => update('activity', opt)}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+            {fieldErrors.activity && (
+              <div className="form-error" style={{ marginTop: '4px' }}>
+                ⚠ {fieldErrors.activity}
+              </div>
+            )}
+          </div>
+
+          {/* ── Prior Treatments ── */}
+          <div className="form-field">
+            <label className="form-label">Prior Treatments</label>
+            <textarea
+              className={`form-textarea${fieldErrors.prior_treatments ? ' has-error' : ''}`}
+              name="prior_treatments"
+              value={formData.prior_treatments}
+              onChange={handleChange}
+              placeholder="Previous treatments, imaging results, failed interventions..."
+              rows={3}
+            />
+            {fieldErrors.prior_treatments && (
+              <div className="form-error">⚠ {fieldErrors.prior_treatments}</div>
+            )}
+          </div>
+
+          {/* ── Action Buttons ── */}
+          <div className="btn-row" style={{ marginTop: '4px' }}>
+            <button
+              className="btn btn-primary"
+              style={{ flex: 1 }}
+              type="submit"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Analyzing...' : '⚡ Analyze Patient'}
+            </button>
+            <button
+              className="btn btn-outline"
+              type="button"
+              onClick={handleDemo}
+              disabled={isLoading}
+            >
+              Demo
+            </button>
+          </div>
+
+        </form>
+      </div>
     </div>
   );
 }
+
+
+
+
+
+
+
+

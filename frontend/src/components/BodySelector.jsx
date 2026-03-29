@@ -138,24 +138,8 @@ export default function BodySelector({ selectedRegion, onRegionSelect }) {
   };
 
   return (
-    <div
-      style={{
-        backgroundColor: 'white',
-        border: '1px solid #E0E6ED',
-        borderRadius: '12px',
-        padding: '16px',
-      }}
-    >
-      <div
-        style={{
-          color: '#003087',
-          fontSize: '14px',
-          fontWeight: 600,
-          marginBottom: '8px',
-        }}
-      >
-        Select Affected Area
-      </div>
+    <div className="body-sel-wrap">
+      <div className="body-sel-label">Select Affected Area</div>
 
       <svg viewBox="0 0 300 600" style={{ width: '100%', maxWidth: '280px', display: 'block', margin: '0 auto' }}>
         <g>
@@ -211,22 +195,6 @@ export default function BodySelector({ selectedRegion, onRegionSelect }) {
         })}
       </svg>
 
-      {selectedRegion ? (
-        <div
-          style={{
-            marginTop: '12px',
-            display: 'inline-block',
-            backgroundColor: '#003087',
-            color: '#FFFFFF',
-            borderRadius: '20px',
-            padding: '6px 16px',
-            fontSize: '13px',
-            fontWeight: 600,
-          }}
-        >
-          Selected: {selectedRegion}
-        </div>
-      ) : null}
     </div>
   );
 }
