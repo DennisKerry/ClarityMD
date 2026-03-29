@@ -1,4 +1,5 @@
 import os
+import json
 from pathlib import Path
 
 from groq import Groq
@@ -13,40 +14,170 @@ from models import Procedure, db
 
 load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
+DATA_PATH = Path(__file__).parent / "data" / "procedures.json"
+
 app = Flask(__name__)
-CORS(app, origins=["https://clarity-md.vercel.app", "http://localhost:3000"])
+CORS(app, origins=[
+    "https://clarity-md.vercel.app",
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+])
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///claritymd.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
 
 
+def _as_csv(value):
+    if isinstance(value, list):
+        return ",".join([str(v).strip() for v in value if str(v).strip()])
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _infer_pain_types(diagnosis_text=""):
+    text = str(diagnosis_text).lower()
+    inferred = []
+
+    if any(k in text for k in ["acute", "sudden", "trauma", "rupture", "tear"]):
+        inferred.append("acute")
+    if any(k in text for k in ["chronic", "months", "years", "persistent"]):
+        inferred.append("chronic")
+    if any(k in text for k in ["lock", "click", "catch", "mechanical"]):
+        inferred.append("mechanical")
+    if any(k in text for k in ["instability", "giving way", "sublux", "disloc"]):
+        inferred.append("instability")
+    if any(k in text for k in ["arthritis", "degenerative", "wear"]):
+        inferred.append("degenerative")
+    if any(k in text for k in ["weakness", "atrophy", "strength"]):
+        inferred.append("weakness")
+    if any(k in text for k in ["impingement", "pinch"]):
+        inferred.append("impingement")
+    if any(k in text for k in ["sport", "athlet", "overhead", "running"]):
+        inferred.append("activity-related")
+
+    return inferred if inferred else ["mechanical"]
+
+
+def _build_full_text(record):
+    parts = [
+        record.get("procedure", ""),
+        record.get("joint", ""),
+        record.get("body_area", ""),
+        record.get("keywords", ""),
+        record.get("pain_types", ""),
+        record.get("product", ""),
+        record.get("product_category", ""),
+        record.get("technique", ""),
+        record.get("contraindications", ""),
+    ]
+    return " ".join([p for p in parts if p]).strip()
+
+
+def _seed_database_if_empty():
+    if not DATA_PATH.exists():
+        return
+
+    with DATA_PATH.open("r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    # Skip if DB already has all records from the JSON
+    if Procedure.query.count() >= len(data):
+        return
+
+    existing_ids = {p.id for p in Procedure.query.with_entities(Procedure.id).all()}
+
+    for idx, item in enumerate(data):
+        if int(item.get("id", idx + 1)) in existing_ids:
+            continue
+        age_range = item.get("age_range") or [14, 80]
+        try:
+            age_min = int(age_range[0])
+            age_max = int(age_range[1])
+        except (ValueError, TypeError, IndexError):
+            age_min, age_max = 14, 80
+
+        record = {
+            "id": int(item.get("id", idx + 1)),
+            "procedure": item.get("procedure", "Unknown Procedure"),
+            "joint": item.get("joint", "Unknown"),
+            "body_area": item.get("joint", "Unknown"),
+            "keywords": _as_csv(item.get("keywords", [])),
+            "pain_types": _as_csv(item.get("pain_types", [])),
+            "product": item.get("product", "Arthrex Product"),
+            "product_category": item.get("product_category", "Orthopedic"),
+            "technique": item.get("technique", "Technique details unavailable."),
+            "age_min": age_min,
+            "age_max": age_max,
+            "activity_level": item.get("activity_level", "Medium"),
+            "recovery_weeks": int(item.get("recovery_weeks", 12)),
+            "contraindications": _as_csv(item.get("contraindications", [])),
+            "arthrex_url": item.get("product_url", "https://www.arthrex.com"),
+        }
+        record["full_text"] = _build_full_text(record)
+        db.session.add(Procedure(**record))
+
+    db.session.commit()
+
+
 @app.route("/health", methods=["GET"])
 def health():
+    _seed_database_if_empty()
     count = Procedure.query.count()
     return jsonify({"status": "ok", "procedures_in_db": count})
 
 
 @app.route("/recommend", methods=["POST"])
 def recommend():
+    _seed_database_if_empty()
     profile = request.json or {}
 
     # Validate required fields
-    required = ["age", "sex", "joint", "diagnosis", "activity", "pain_types", "prior_treatments"]
+    required = ["age", "sex", "joint", "diagnosis", "activity", "prior_treatments"]
     missing = [field for field in required if profile.get(field) in (None, "", [])]
     if missing:
         return jsonify({"error": f"Missing fields: {missing}"}), 400
 
-    # Step 1: Get relevant procedures from DB, then widen if sparse.
-    procedures = Procedure.query.filter(
+    if profile.get("pain_types") in (None, "", []):
+        profile["pain_types"] = _infer_pain_types(profile.get("diagnosis", ""))
+
+    # Step 1: Get joint-specific procedures + always include multi-joint entries (e.g. PRP).
+    joint_procs = Procedure.query.filter(
         or_(
             Procedure.joint.ilike(f"%{profile['joint']}%"),
             Procedure.body_area.ilike(f"%{profile['joint']}%"),
         )
     ).all()
+    multi_procs = Procedure.query.filter(
+        Procedure.joint.ilike("%Multiple%")
+    ).all()
 
-    if len(procedures) < 5:
-        procedures = Procedure.query.all()
+    # Merge, deduplicate
+    seen_ids: set = set()
+    procedures = []
+    for p in joint_procs + multi_procs:
+        if p.id not in seen_ids:
+            seen_ids.add(p.id)
+            procedures.append(p)
+
+    if not procedures:
+        known = "Knee, Shoulder, Hip, Elbow, Wrist, Ankle, Neck, Spine"
+        return jsonify({
+            "procedures": [],
+            "surgeonSummary": (
+                f"No Arthrex procedures found for '{profile['joint']}'. "
+                f"This catalog currently covers: {known}."
+            ),
+            "patientSummary": (
+                "We don't have procedures cataloged for this body area yet. "
+                "Please consult your surgeon directly."
+            ),
+            "total_matched": 0,
+            "db_size": Procedure.query.count(),
+        })
 
     # Step 2: ML scoring
     ranked = score_procedures(profile, procedures)
@@ -128,8 +259,8 @@ Friendly tone, 6th grade reading level, under 200 words."""
     except Exception as exc:
         # Keep API useful even when Groq service is unavailable.
         surgeon_summary = (
-            "AI summary unavailable due to Groq error. "
-            f"Using ML-ranked recommendations only. ({str(exc)})"
+            "AI summary unavailable due to a temporary Groq error. "
+            "Using ML-ranked recommendations only."
         )
         patient_summary = "AI explanation is temporarily unavailable. Showing ranked procedure options instead."
 
@@ -147,4 +278,5 @@ Friendly tone, 6th grade reading level, under 200 words."""
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
+        _seed_database_if_empty()
     app.run(debug=True, port=5000)
