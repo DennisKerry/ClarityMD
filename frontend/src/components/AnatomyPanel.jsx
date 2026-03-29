@@ -389,231 +389,78 @@ export default function AnatomyPanel({ procedures }) {
 
   const diagram = joint ? JOINT_DIAGRAMS[joint] : null;
 
-  const styles = {
-    container: {
-      padding: '24px',
-      backgroundColor: 'white',
-      borderRadius: '10px',
-      border: '1px solid #E0E6ED',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '16px',
-    },
-    title: {
-      fontSize: '18px',
-      fontWeight: '600',
-      color: '#003087',
-      marginBottom: '4px',
-    },
-    subtitle: {
-      fontSize: '12px',
-      color: '#5A6B7A',
-    },
-    tabs: {
-      display: 'flex',
-      gap: '8px',
-      borderBottom: '2px solid #E0E6ED',
-      paddingBottom: '0',
-    },
-    tab: (active) => ({
-      padding: '8px 16px',
-      fontSize: '13px',
-      fontWeight: active ? '700' : '500',
-      color: active ? '#003087' : '#5A6B7A',
-      border: 'none',
-      background: 'none',
-      cursor: 'pointer',
-      borderBottom: active ? '2px solid #003087' : '2px solid transparent',
-      marginBottom: '-2px',
-      transition: 'all 0.15s',
-    }),
-    diagramRow: {
-      display: 'flex',
-      gap: '20px',
-      alignItems: 'flex-start',
-    },
-    bodyColumn: {
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '8px',
-      minWidth: '130px',
-    },
-    bodyLabel: {
-      fontSize: '10px',
-      color: '#5A6B7A',
-      textAlign: 'center',
-      fontWeight: '500',
-    },
-    zoomColumn: {
-      flex: 1,
-      backgroundColor: '#F9FAFB',
-      borderRadius: '8px',
-      border: '1px solid #E0E6ED',
-      padding: '12px',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: '8px',
-    },
-    zoomLabel: {
-      fontSize: '11px',
-      fontWeight: '600',
-      color: '#003087',
-      textAlign: 'center',
-    },
-    noJoint: {
-      textAlign: 'center',
-      color: '#5A6B7A',
-      fontSize: '13px',
-      padding: '32px 16px',
-      backgroundColor: '#F9FAFB',
-      borderRadius: '8px',
-      border: '1px dashed #E0E6ED',
-    },
-    procedureChip: {
-      display: 'inline-flex',
-      alignItems: 'center',
-      gap: '6px',
-      padding: '4px 10px',
-      backgroundColor: '#EEF4FF',
-      color: '#003087',
-      borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: '600',
-    },
-    legendRow: {
-      display: 'flex',
-      flexWrap: 'wrap',
-      gap: '8px',
-      marginTop: '4px',
-    },
-    legendItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-      fontSize: '10px',
-      color: '#5A6B7A',
-    },
-    legendDot: (color) => ({
-      width: '8px',
-      height: '8px',
-      borderRadius: '50%',
-      backgroundColor: color,
-      flexShrink: 0,
-    }),
-    pulseRing: {
-      animation: pulse ? 'clarityPulse 1.2s ease-out 3' : 'none',
-    },
-  };
-
   const topProc = procedures?.[0];
 
   return (
-    <>
-      <style>{`
-        @keyframes clarityPulse {
-          0%   { opacity: 1; transform: scale(1); }
-          50%  { opacity: 0.4; transform: scale(1.15); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
-
-      <div style={styles.container}>
-        <div>
-          <div style={styles.title}>🫀 Anatomy Diagram</div>
-          <div style={styles.subtitle}>Affected region & procedure target area</div>
+    <div className="card anat-panel">
+      <div className="anat-header">
+        <div className="anat-title">
+          <div className="anat-title-icon">
+            <svg viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+          </div>
+          Anatomy
         </div>
-
-        {topProc && (
-          <div style={styles.procedureChip}>
-            <span>🎯</span>
-            <span>{topProc.procedure}</span>
-          </div>
-        )}
-
-        <div style={styles.tabs}>
-          <button style={styles.tab(activeTab === 'diagram')} onClick={() => setActiveTab('diagram')}>
-            Joint Detail
-          </button>
-          <button style={styles.tab(activeTab === 'body')} onClick={() => setActiveTab('body')}>
-            Body Overview
-          </button>
-        </div>
-
-        {!joint ? (
-          <div style={styles.noJoint}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>🦴</div>
-            <div>Anatomy diagram will appear here after procedure recommendation</div>
-          </div>
-        ) : activeTab === 'diagram' ? (
-          <div style={styles.diagramRow}>
-            {/* Mini body with glow */}
-            <div style={styles.bodyColumn}>
-              <div style={{ ...styles.pulseRing }}>
-                <BodySilhouette joint={joint} />
-              </div>
-              <div style={styles.bodyLabel}>{joint} region</div>
-            </div>
-
-            {/* Zoomed joint */}
-            <div style={styles.zoomColumn}>
-              <div style={styles.zoomLabel}>
-                {diagram?.label || joint} — Zoomed View
-              </div>
-              {diagram ? (
-                <svg
-                  viewBox={diagram.viewBox}
-                  style={{ width: '100%', maxWidth: '180px', display: 'block' }}
-                >
-                  {diagram.render(null)}
-                </svg>
-              ) : (
-                <div style={{ fontSize: '12px', color: '#5A6B7A', textAlign: 'center', padding: '16px' }}>
-                  Diagram not available for this joint
-                </div>
-              )}
-              <div style={styles.legendRow}>
-                <div style={styles.legendItem}>
-                  <div style={styles.legendDot('#e8ddd0')} /> Bone
-                </div>
-                <div style={styles.legendItem}>
-                  <div style={styles.legendDot('#b8d4e8')} /> Soft tissue
-                </div>
-                <div style={styles.legendItem}>
-                  <div style={styles.legendDot('#003087')} /> Key structure
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Body overview tab */
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-            <BodySilhouette joint={joint} />
-            <div style={{ fontSize: '12px', color: '#5A6B7A', textAlign: 'center' }}>
-              Highlighted area indicates the <strong style={{ color: '#003087' }}>{joint}</strong> region targeted by the top procedure
-            </div>
-          </div>
-        )}
-
-        {/* Recovery note */}
-        {topProc?.recovery_weeks && (
-          <div style={{
-            backgroundColor: '#F0F7FF',
-            border: '1px solid #C8DFF5',
-            borderRadius: '8px',
-            padding: '10px 14px',
-            fontSize: '12px',
-            color: '#003087',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-          }}>
-            <span>📅</span>
-            <span>Expected recovery for <strong>{topProc.procedure}</strong>: ~{topProc.recovery_weeks} weeks</span>
-          </div>
-        )}
+        <div className="anat-subtitle">Affected region &amp; procedure target</div>
       </div>
-    </>
+
+      {topProc && (
+        <div className="anat-proc-chip">{topProc.procedure}</div>
+      )}
+
+      <div className="anat-tabs">
+        <button className={`anat-tab${activeTab === 'diagram' ? ' active' : ''}`} onClick={() => setActiveTab('diagram')}>
+          Joint Detail
+        </button>
+        <button className={`anat-tab${activeTab === 'body' ? ' active' : ''}`} onClick={() => setActiveTab('body')}>
+          Body Overview
+        </button>
+      </div>
+
+      {!joint ? (
+        <div className="anat-no-joint">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="4" x2="12" y2="9"/><line x1="12" y1="15" x2="12" y2="20"/><line x1="4" y1="12" x2="9" y2="12"/><line x1="15" y1="12" x2="20" y2="12"/></svg>
+          <span>Anatomy diagram will appear after procedure recommendation</span>
+        </div>
+      ) : activeTab === 'diagram' ? (
+        <div className="anat-diagram-row">
+          <div className="anat-body-col">
+            <div className={pulse ? 'anat-pulse-ring' : ''}>
+              <BodySilhouette joint={joint} />
+            </div>
+            <div className="anat-body-label">{joint}</div>
+          </div>
+
+          <div className="anat-zoom-col">
+            <div className="anat-zoom-label">{diagram?.label || joint}</div>
+            {diagram ? (
+              <svg viewBox={diagram.viewBox} style={{ width: '100%', maxWidth: '160px', display: 'block' }}>
+                {diagram.render(null)}
+              </svg>
+            ) : (
+              <div className="anat-no-diagram">Diagram not available</div>
+            )}
+            <div className="anat-legend-row">
+              <div className="anat-legend-item"><div className="anat-legend-dot" style={{ background: '#e8ddd0' }} />Bone</div>
+              <div className="anat-legend-item"><div className="anat-legend-dot" style={{ background: '#b8d4e8' }} />Cartilage</div>
+              <div className="anat-legend-item"><div className="anat-legend-dot" style={{ background: '#003087' }} />Key structure</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="anat-body-overview">
+          <BodySilhouette joint={joint} />
+          <div className="anat-body-overview-label">
+            Highlighted area indicates the <strong>{joint}</strong> region targeted by the top procedure
+          </div>
+        </div>
+      )}
+
+      {topProc?.recovery_weeks && (
+        <div className="anat-recovery-note">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Expected recovery for <strong>{topProc.procedure}</strong>: ~{topProc.recovery_weeks} weeks</span>
+        </div>
+      )}
+    </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PatientForm from './components/PatientForm';
 import SurgeonPanel from './components/SurgeonPanel';
 import PatientPanel from './components/PatientPanel';
+import AnatomyPanel from './components/AnatomyPanel';
 import LoadingSpinner from './components/LoadingSpinner';
 import { generateClarityMD } from './utils/api';
 
@@ -134,6 +135,7 @@ function App() {
             <>
               <SurgeonPanel procedures={results} summary={surgeonSummary} />
               <PatientPanel procedures={results} summary={patientSummary} />
+              <AnatomyPanel procedures={results} />
             </>
           ) : (
             <div className="card">
