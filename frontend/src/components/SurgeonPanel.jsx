@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Markdown from 'react-markdown';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -189,7 +190,9 @@ export default function SurgeonPanel({ procedures, summary }) {
                 {copied ? '✓ Copied' : '📋 Copy Brief'}
               </button>
             </div>
-            <div className="clinical-brief">{summary}</div>
+            <div className="clinical-brief">
+              <Markdown>{summary}</Markdown>
+            </div>
           </>
         )}
       </div>

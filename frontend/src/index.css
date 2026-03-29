@@ -350,10 +350,10 @@ input, textarea, select { font-family: var(--font); }
 .proc-card.rank-n { border-left-color: var(--gray-300); }
 
 .proc-card-head {
-  padding: 12px 14px;
+  padding: 10px 14px;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
   user-select: none;
   background: var(--white);
@@ -361,26 +361,26 @@ input, textarea, select { font-family: var(--font); }
 .proc-card-head:hover { background: var(--gray-50); }
 
 .rank-medal {
-  min-width: 34px;
-  height: 34px;
+  min-width: 32px;
+  height: 32px;
   border-radius: var(--r-sm);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: 17px;
   flex-shrink: 0;
 }
 .rank-medal.rank-1 { background: #FEF9E7; }
 .rank-medal.rank-2 { background: #F5F5F5; }
 .rank-medal.rank-3 { background: #FFF3E0; }
-.rank-medal.rank-n { background: var(--blue-50); font-size: 13px; font-weight: 700; color: var(--blue-800); }
+.rank-medal.rank-n { background: var(--blue-50); font-size: 12px; font-weight: 700; color: var(--blue-800); }
 
 .proc-meta  { flex: 1; min-width: 0; }
-.proc-name  { font-size: 14px; font-weight: 600; color: var(--blue-800); line-height: 1.3; margin-bottom: 2px; }
-.proc-product { font-size: 12px; color: var(--gray-500); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.proc-name  { font-size: 13px; font-weight: 600; color: var(--blue-800); line-height: 1.3; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.proc-product { font-size: 11px; color: var(--gray-500); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-.proc-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; flex-shrink: 0; }
-.collapse-icon   { font-size: 10px; color: var(--gray-400); }
+.proc-head-right { display: flex; flex-direction: row; align-items: center; gap: 8px; flex-shrink: 0; }
+.collapse-icon   { font-size: 11px; color: var(--gray-400); line-height: 1; transition: transform var(--t-fast); }
 
 .proc-card-body { padding: 12px 14px 14px; border-top: 1px solid var(--gray-100); }
 
@@ -440,11 +440,26 @@ input, textarea, select { font-family: var(--font); }
   border: 1px solid var(--gray-200);
   border-radius: var(--r-md);
   padding: var(--sp-4);
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.7;
   color: var(--gray-700);
-  max-height: 200px;
+  max-height: 300px;
   overflow-y: auto;
+}
+.clinical-brief p { margin: 0 0 8px; }
+.clinical-brief p:last-child { margin-bottom: 0; }
+.clinical-brief strong { color: var(--gray-900); font-weight: 600; }
+.clinical-brief h1, .clinical-brief h2, .clinical-brief h3 {
+  font-size: 13px; font-weight: 700; color: var(--blue-800);
+  margin: 12px 0 4px;
+}
+.clinical-brief ol, .clinical-brief ul {
+  padding-left: 18px; margin: 4px 0 8px;
+}
+.clinical-brief li { margin-bottom: 4px; }
+.clinical-brief code {
+  background: var(--gray-200); padding: 1px 5px; border-radius: 3px;
+  font-size: 12px;
 }
 
 /* ── Patient Summary ── */
@@ -526,8 +541,8 @@ input, textarea, select { font-family: var(--font); }
 
 /* ── Body Selector wrapper ── */
 .body-sel-wrap {
-  background: var(--gray-50);
-  border: 1px solid var(--gray-200);
+  background: var(--blue-50);
+  border: 1px solid var(--blue-100);
   border-radius: var(--r-md);
   padding: 10px;
   text-align: center;

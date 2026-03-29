@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import BodySelector from './BodySelector';
 
 const ACTIVITY_OPTIONS = ['High', 'Medium', 'Low', 'Sedentary'];
+const SEX_OPTIONS = ['Male', 'Female', 'Other'];
 
 const DEMO_PATIENT = {
   age: '34',
@@ -132,15 +133,19 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
             </div>
             <div className="form-field">
               <label className="form-label">Sex</label>
-              <input
-                className={`form-input${fieldErrors.sex ? ' has-error' : ''}`}
-                type="text"
-                name="sex"
-                value={formData.sex}
-                onChange={handleChange}
-                placeholder="Male / Female"
-              />
-              {fieldErrors.sex && <div className="form-error">⚠ {fieldErrors.sex}</div>}
+              <div className="pill-group">
+                {SEX_OPTIONS.map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    className={`pill-opt${formData.sex === opt ? ' active' : ''}`}
+                    onClick={() => update('sex', opt)}
+                  >
+                    {opt}
+                  </button>
+                ))}
+              </div>
+              {fieldErrors.sex && <div className="form-error" style={{ marginTop: '4px' }}>⚠ {fieldErrors.sex}</div>}
             </div>
           </div>
 

@@ -4,44 +4,44 @@ const REGIONS = [
   {
     name: 'Shoulder (Left)',
     joint: 'Shoulder',
-    shape: { type: 'ellipse', cx: 98, cy: 140, rx: 16, ry: 13 },
+    shape: { type: 'ellipse', cx: 93, cy: 140, rx: 16, ry: 13 },
     label: { x: 52, y: 132, anchor: 'end' },
-    leader: { x1: 56, y1: 132, x2: 82, y2: 138 },
+    leader: { x1: 56, y1: 132, x2: 77, y2: 138 },
   },
   {
     name: 'Shoulder (Right)',
     joint: 'Shoulder',
-    shape: { type: 'ellipse', cx: 202, cy: 140, rx: 16, ry: 13 },
+    shape: { type: 'ellipse', cx: 207, cy: 140, rx: 16, ry: 13 },
     label: { x: 248, y: 132, anchor: 'start' },
-    leader: { x1: 244, y1: 132, x2: 218, y2: 138 },
+    leader: { x1: 244, y1: 132, x2: 223, y2: 138 },
   },
   {
     name: 'Elbow (Left)',
     joint: 'Elbow',
-    shape: { type: 'ellipse', cx: 70, cy: 240, rx: 13, ry: 11 },
+    shape: { type: 'ellipse', cx: 68, cy: 240, rx: 13, ry: 11 },
     label: { x: 40, y: 230, anchor: 'end' },
-    leader: { x1: 44, y1: 230, x2: 58, y2: 236 },
+    leader: { x1: 44, y1: 230, x2: 56, y2: 236 },
   },
   {
     name: 'Elbow (Right)',
     joint: 'Elbow',
-    shape: { type: 'ellipse', cx: 230, cy: 240, rx: 13, ry: 11 },
+    shape: { type: 'ellipse', cx: 232, cy: 240, rx: 13, ry: 11 },
     label: { x: 260, y: 230, anchor: 'start' },
-    leader: { x1: 256, y1: 230, x2: 242, y2: 236 },
+    leader: { x1: 256, y1: 230, x2: 244, y2: 236 },
   },
   {
     name: 'Wrist (Left)',
     joint: 'Wrist',
-    shape: { type: 'ellipse', cx: 58, cy: 328, rx: 11, ry: 9 },
+    shape: { type: 'ellipse', cx: 61, cy: 328, rx: 11, ry: 9 },
     label: { x: 34, y: 324, anchor: 'end' },
-    leader: { x1: 38, y1: 324, x2: 48, y2: 326 },
+    leader: { x1: 38, y1: 324, x2: 51, y2: 326 },
   },
   {
     name: 'Wrist (Right)',
     joint: 'Wrist',
-    shape: { type: 'ellipse', cx: 242, cy: 328, rx: 11, ry: 9 },
+    shape: { type: 'ellipse', cx: 239, cy: 328, rx: 11, ry: 9 },
     label: { x: 266, y: 324, anchor: 'start' },
-    leader: { x1: 262, y1: 324, x2: 252, y2: 326 },
+    leader: { x1: 262, y1: 324, x2: 249, y2: 326 },
   },
   {
     name: 'Hip (Left)',
@@ -60,37 +60,37 @@ const REGIONS = [
   {
     name: 'Knee (Left)',
     joint: 'Knee',
-    shape: { type: 'ellipse', cx: 126, cy: 415, rx: 13, ry: 11 },
+    shape: { type: 'ellipse', cx: 124, cy: 415, rx: 13, ry: 11 },
     label: { x: 92, y: 410, anchor: 'end' },
-    leader: { x1: 96, y1: 410, x2: 112, y2: 414 },
+    leader: { x1: 96, y1: 410, x2: 111, y2: 414 },
   },
   {
     name: 'Knee (Right)',
     joint: 'Knee',
-    shape: { type: 'ellipse', cx: 174, cy: 415, rx: 13, ry: 11 },
+    shape: { type: 'ellipse', cx: 176, cy: 415, rx: 13, ry: 11 },
     label: { x: 208, y: 410, anchor: 'start' },
-    leader: { x1: 204, y1: 410, x2: 188, y2: 414 },
+    leader: { x1: 204, y1: 410, x2: 189, y2: 414 },
   },
   {
     name: 'Ankle (Left)',
     joint: 'Ankle',
-    shape: { type: 'ellipse', cx: 128, cy: 525, rx: 11, ry: 9 },
-    label: { x: 94, y: 522, anchor: 'end' },
-    leader: { x1: 98, y1: 522, x2: 116, y2: 524 },
+    shape: { type: 'ellipse', cx: 124, cy: 525, rx: 11, ry: 9 },
+    label: { x: 90, y: 522, anchor: 'end' },
+    leader: { x1: 94, y1: 522, x2: 113, y2: 524 },
   },
   {
     name: 'Ankle (Right)',
     joint: 'Ankle',
-    shape: { type: 'ellipse', cx: 172, cy: 525, rx: 11, ry: 9 },
-    label: { x: 206, y: 522, anchor: 'start' },
-    leader: { x1: 202, y1: 522, x2: 184, y2: 524 },
+    shape: { type: 'ellipse', cx: 176, cy: 525, rx: 11, ry: 9 },
+    leader: { x1: 210, y1: 522, x2: 187, y2: 524 },
+    label: { x: 214, y: 522, anchor: 'start' },
   },
   {
     name: 'Spine / Back',
     joint: 'Spine',
-    shape: { type: 'rect', x: 144, y: 180, width: 12, height: 170, rx: 6, ry: 6 },
-    label: { x: 212, y: 214, anchor: 'start' },
-    leader: { x1: 208, y1: 214, x2: 156, y2: 226 },
+    shape: { type: 'rect', x: 144, y: 116, width: 12, height: 215, rx: 6, ry: 6 },
+    label: { x: 212, y: 182, anchor: 'start' },
+    leader: { x1: 208, y1: 182, x2: 156, y2: 210 },
   },
   {
     name: 'Neck',
@@ -141,20 +141,20 @@ export default function BodySelector({ selectedRegion, onRegionSelect }) {
     <div className="body-sel-wrap">
       <div className="body-sel-label">Select Affected Area</div>
 
-      <svg viewBox="0 0 300 600" style={{ width: '100%', maxWidth: '280px', display: 'block', margin: '0 auto' }}>
+      <svg viewBox="-30 0 360 600" style={{ width: '100%', maxWidth: '300px', display: 'block', margin: '0 auto' }}>
         <g>
-          <circle cx="150" cy="56" r="28" fill="#f0ebe3" stroke="#c9b99a" strokeWidth="1.6" />
-          <rect x="140" y="84" width="20" height="24" rx="8" fill="#f0ebe3" stroke="#c9b99a" strokeWidth="1.6" />
+          <circle cx="150" cy="56" r="28" fill="#DCE8F8" stroke="#6B9EC8" strokeWidth="1.6" />
+          <rect x="140" y="84" width="20" height="24" rx="8" fill="#DCE8F8" stroke="#6B9EC8" strokeWidth="1.6" />
           <path
             d="M100 112 Q83 162 96 236 Q108 304 122 338 L178 338 Q192 304 204 236 Q217 162 200 112 Z"
-            fill="#f0ebe3"
-            stroke="#c9b99a"
+            fill="#DCE8F8"
+            stroke="#6B9EC8"
             strokeWidth="1.6"
           />
-          <path d="M100 128 Q68 182 68 252 Q68 300 58 342" fill="none" stroke="#c9b99a" strokeWidth="18" strokeLinecap="round" />
-          <path d="M200 128 Q232 182 232 252 Q232 300 242 342" fill="none" stroke="#c9b99a" strokeWidth="18" strokeLinecap="round" />
-          <path d="M124 338 L124 540" fill="none" stroke="#c9b99a" strokeWidth="24" strokeLinecap="round" />
-          <path d="M176 338 L176 540" fill="none" stroke="#c9b99a" strokeWidth="24" strokeLinecap="round" />
+          <path d="M100 128 Q68 182 68 252 Q68 300 58 342" fill="none" stroke="#6B9EC8" strokeWidth="18" strokeLinecap="round" />
+          <path d="M200 128 Q232 182 232 252 Q232 300 242 342" fill="none" stroke="#6B9EC8" strokeWidth="18" strokeLinecap="round" />
+          <path d="M124 338 L124 540" fill="none" stroke="#6B9EC8" strokeWidth="24" strokeLinecap="round" />
+          <path d="M176 338 L176 540" fill="none" stroke="#6B9EC8" strokeWidth="24" strokeLinecap="round" />
         </g>
 
         {REGIONS.map((region) => {
