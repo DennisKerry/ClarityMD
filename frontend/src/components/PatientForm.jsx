@@ -71,14 +71,11 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
     <div className="card">
       <div className="card-header">
         <div className="card-title">
-          <div className="card-icon">📋</div>
+          <div className="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
           Patient Intake
         </div>
-        {onStartOver && (
-          <button className="btn btn-ghost btn-sm no-print" type="button" onClick={onStartOver}>
-            ↻ New Patient
-          </button>
-        )}
       </div>
 
       <div className="card-body">
@@ -99,7 +96,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
             />
             {selectedRegion && (
               <div className="region-badge" style={{ alignSelf: 'flex-start', marginTop: '6px' }}>
-                ✓ {selectedRegion}
+                {selectedRegion}
               </div>
             )}
             <input
@@ -111,7 +108,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
               placeholder="Or type manually (e.g., Knee, Shoulder, Spine)"
             />
             {fieldErrors.joint && (
-              <div className="form-error">⚠ {fieldErrors.joint}</div>
+              <div className="form-error">{fieldErrors.joint}</div>
             )}
           </div>
 
@@ -129,7 +126,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
                 min="1"
                 max="120"
               />
-              {fieldErrors.age && <div className="form-error">⚠ {fieldErrors.age}</div>}
+              {fieldErrors.age && <div className="form-error">{fieldErrors.age}</div>}
             </div>
             <div className="form-field">
               <label className="form-label">Sex</label>
@@ -145,7 +142,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
                   </button>
                 ))}
               </div>
-              {fieldErrors.sex && <div className="form-error" style={{ marginTop: '4px' }}>⚠ {fieldErrors.sex}</div>}
+              {fieldErrors.sex && <div className="form-error" style={{ marginTop: '4px' }}>{fieldErrors.sex}</div>}
             </div>
           </div>
 
@@ -161,7 +158,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
               rows={3}
             />
             {fieldErrors.diagnosis && (
-              <div className="form-error">⚠ {fieldErrors.diagnosis}</div>
+              <div className="form-error">{fieldErrors.diagnosis}</div>
             )}
           </div>
 
@@ -182,7 +179,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
             </div>
             {fieldErrors.activity && (
               <div className="form-error" style={{ marginTop: '4px' }}>
-                ⚠ {fieldErrors.activity}
+                {fieldErrors.activity}
               </div>
             )}
           </div>
@@ -199,7 +196,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
               rows={3}
             />
             {fieldErrors.prior_treatments && (
-              <div className="form-error">⚠ {fieldErrors.prior_treatments}</div>
+              <div className="form-error">{fieldErrors.prior_treatments}</div>
             )}
           </div>
 
@@ -211,7 +208,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
               type="submit"
               disabled={isLoading}
             >
-              {isLoading ? 'Analyzing...' : '⚡ Analyze Patient'}
+              {isLoading ? 'Analyzing…' : 'Analyze Patient'}
             </button>
             <button
               className="btn btn-outline"
@@ -219,7 +216,7 @@ export default function PatientForm({ profile, onProfileChange, onSubmit, isLoad
               onClick={handleDemo}
               disabled={isLoading}
             >
-              Demo
+              Load Demo
             </button>
           </div>
 

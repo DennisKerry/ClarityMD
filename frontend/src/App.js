@@ -95,19 +95,26 @@ function App() {
     <div className="app-root">
       {/* ── Header ── */}
       <header className="app-header">
-        <div className="header-brand">
+        <div className="header-left">
           <div className="header-logo">Clarity<span>MD</span></div>
           <div className="header-divider" />
-          <div className="header-tagline">Orthopedic Procedure Recommendation Engine</div>
+          <div className="header-tagline">Orthopedic Procedure Advisor</div>
         </div>
-        <div className="header-badge">Arthrex × Groq AI</div>
+        <div className="header-right">
+          <div className="header-pill">Arthrex &times; Groq AI</div>
+          {results && (
+            <button className="header-new-btn" onClick={handleStartOver}>
+              New Patient
+            </button>
+          )}
+        </div>
       </header>
 
       {/* ── Main Workspace ── */}
       <main className="app-main">
         {error && (
           <div className="alert-error">
-            <span>⚠</span>
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             <span>{error}</span>
           </div>
         )}
@@ -131,12 +138,13 @@ function App() {
           ) : (
             <div className="card">
               <div className="empty-state">
-                <div className="empty-icon">🦴</div>
+                <div className="empty-icon">
+                  <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4m0 4h.01"/></svg>
+                </div>
                 <div className="empty-title">Ready for Analysis</div>
                 <div className="empty-desc">
-                  Fill in the patient profile and click{' '}
-                  <strong>Analyze Patient</strong> to see AI-ranked Arthrex
-                  procedure recommendations.
+                  Complete the patient intake form and click <strong>Analyze</strong> to
+                  receive AI-ranked Arthrex procedure recommendations.
                 </div>
               </div>
             </div>

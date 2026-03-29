@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Markdown from 'react-markdown';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const RANK_LABELS = ['#1', '#2', '#3'];
 
 function rankClass(idx) {
   if (idx === 0) return 'rank-1';
@@ -34,8 +34,8 @@ function ProcedureCard({ proc, idx, isOpen, onToggle }) {
     <div className={`proc-card ${rk}`}>
       {/* ── Card header (always visible, toggles body) ── */}
       <div className="proc-card-head" onClick={onToggle}>
-        <div className={`rank-medal ${rk}`}>
-          {idx < 3 ? MEDALS[idx] : `#${idx + 1}`}
+        <div className={`rank-badge ${rk}`}>
+          {idx < 3 ? RANK_LABELS[idx] : `#${idx + 1}`}
         </div>
 
         <div className="proc-meta">
@@ -45,7 +45,7 @@ function ProcedureCard({ proc, idx, isOpen, onToggle }) {
 
         <div className="proc-head-right">
           <span className={badgeClass(proc.confidence_label)}>{proc.confidence_label}</span>
-          <span className="collapse-icon">{isOpen ? '▲' : '▼'}</span>
+          <svg className={`chevron${isOpen ? ' open' : ''}`} viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ function ProcedureCard({ proc, idx, isOpen, onToggle }) {
           {proc.match_reasons && proc.match_reasons.length > 0 && (
             <div className="reason-tags">
               {proc.match_reasons.map((r, i) => (
-                <span key={i} className="reason-tag">✓ {r}</span>
+                <span key={i} className="reason-tag">{r}</span>
               ))}
             </div>
           )}
@@ -79,7 +79,7 @@ function ProcedureCard({ proc, idx, isOpen, onToggle }) {
 
           {/* Recovery + category chips */}
           <div className="info-row">
-            <span className="info-chip">⏱ {proc.recovery_weeks || '12–16'} wks recovery</span>
+            <span className="info-chip">{proc.recovery_weeks || '12–16'} wks recovery</span>
             {proc.product_category && (
               <span className="info-chip">{proc.product_category}</span>
             )}
@@ -93,7 +93,7 @@ function ProcedureCard({ proc, idx, isOpen, onToggle }) {
                   <div className="contra-group-label">Profile Risk Flags</div>
                   <div className="flag-tags">
                     {flags.map((f, i) => (
-                      <span key={i} className="flag-tag">⚠ {f}</span>
+                      <span key={i} className="flag-tag">{f}</span>
                     ))}
                   </div>
                 </>
@@ -146,7 +146,9 @@ export default function SurgeonPanel({ procedures, summary }) {
     return (
       <div className="card">
         <div className="empty-state">
-          <div className="empty-icon">🔬</div>
+          <div className="empty-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          </div>
           <div className="empty-title">Surgical Recommendations</div>
           <div className="empty-desc">
             Submit a patient profile to see ranked procedure recommendations.
@@ -160,7 +162,9 @@ export default function SurgeonPanel({ procedures, summary }) {
     <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
       <div className="card-header">
         <div className="card-title">
-          <div className="card-icon">🔬</div>
+          <div className="card-icon">
+            <svg viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>
+          </div>
           Surgical Recommendations
         </div>
         <span className="badge badge-blue">{procedures.length} procedures</span>
@@ -187,7 +191,7 @@ export default function SurgeonPanel({ procedures, summary }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
               <div className="section-label" style={{ margin: 0 }}>Clinical Brief</div>
               <button className="btn btn-ghost btn-sm no-print" onClick={handleCopy}>
-                {copied ? '✓ Copied' : '📋 Copy Brief'}
+                {copied ? 'Copied' : 'Copy Brief'}
               </button>
             </div>
             <div className="clinical-brief">
