@@ -2,16 +2,17 @@
 
 ## Flow
 
-1. Frontend collects patient profile in `PatientForm`
-2. Frontend sends profile to backend `POST /recommend`
-3. Backend ensures procedure catalog is seeded into SQLite
-4. Backend ML engine ranks procedures (`ml_engine.py`)
-5. Backend calls Groq for two summaries:
+1. Surgeon selects an affected joint on the interactive SVG body diagram (`BodySelector`)
+2. Frontend collects the full patient profile in `PatientForm`
+3. Frontend sends profile to backend `POST /recommend`
+4. Backend ensures procedure catalog is seeded into SQLite
+5. Backend ML engine ranks procedures via TF-IDF cosine similarity (`ml_engine.py`)
+6. Backend calls Groq for two summaries:
    - Surgeon clinical brief
    - Patient plain-language summary
-6. Frontend renders:
-   - `SurgeonPanel` for ranked procedures and risk flags
-   - `PatientPanel` for education summary and recovery timeline
+7. Frontend renders:
+   - `SurgeonPanel` for ranked procedures, confidence scores, and risk flags
+   - `PatientPanel` for education summary, recovery timeline, and AI disclaimer
 
 ## Single Source of Truth
 
@@ -55,5 +56,5 @@
 
 ## Notes
 
-- `frontend/src/utils/claude.js` is a legacy filename; it is a backend API client.
-- If Groq is unavailable, backend still returns ranked procedures.
+- `frontend/src/utils/api.js` is the backend API client (formerly `claude.js`).
+- If Groq is unavailable, the backend still returns ranked procedures without AI summaries.
